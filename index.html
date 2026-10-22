@@ -1,0 +1,1539 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Laboratorio Grover</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Identidad propia de la app: claro por defecto, cian azulado de instrumento de laboratorio, IBM Plex, esquinas suaves. Distinta de las diapositivas. */
+:root{
+  --bg:#EDF1F4; --panel:#FFFFFF; --panel2:#F2F5F8; --line:#D6DDE4;
+  --fg:#0F1B26; --muted:#566675; --accent:#0B8279; --accent-ink:#FFFFFF; --accent-text:#0B8279;
+  --ph0:#2F6FEB; --ph1:#C47400; --good:#1B7A45; --bad:#B3261E;
+  --sans:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+  --mono:'IBM Plex Mono','Courier New',monospace;
+  --r:14px; --r2:10px; --shadow:0 1px 2px rgba(15,27,38,.06),0 4px 16px rgba(15,27,38,.05);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C141B; --panel:#131E27; --panel2:#1A2833; --line:#27384A;
+    --fg:#E6EEF4; --muted:#8FA3B3; --accent:#2DD4BF; --accent-ink:#06211E; --accent-text:#2DD4BF;
+    --ph0:#6EA8FF; --ph1:#F5B642; --good:#6FCF97; --bad:#FF8A80; --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C141B; --panel:#131E27; --panel2:#1A2833; --line:#27384A;
+  --fg:#E6EEF4; --muted:#8FA3B3; --accent:#2DD4BF; --accent-ink:#06211E; --accent-text:#2DD4BF;
+  --ph0:#6EA8FF; --ph1:#F5B642; --good:#6FCF97; --bad:#FF8A80; --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{
+  margin:0; color:var(--fg); font-family:var(--sans); font-size:16px; line-height:1.5;
+  padding-block:14px 96px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:14px}
+.appbar{display:flex; align-items:center; gap:12px; padding:4px 2px}
+.logo{width:36px; height:36px; border-radius:50%; background:var(--accent); flex:none; position:relative}
+.logo::before{content:""; position:absolute; inset:9px; border-radius:50%; border:2px solid var(--accent-ink)}
+.logo::after{content:""; position:absolute; width:7px; height:7px; border-radius:50%; background:var(--accent-ink); left:22px; top:6px}
+h1{font:600 20px/1.15 var(--sans); margin:0; letter-spacing:-.01em}
+.sub{font-size:13px; color:var(--muted)}
+h2{font:600 18px/1.2 var(--sans); margin:0; letter-spacing:-.005em; text-wrap:balance}
+p{margin:0}
+.small{font-size:14px; color:var(--muted)}
+.mono{font-family:var(--mono)}
+section[hidden]{display:none}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); padding:16px; display:flex; flex-direction:column; gap:14px; min-width:0}
+.label{font:500 12px var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.hint{font-size:13px; color:var(--muted)}
+.hint.act{color:var(--accent-text); font-weight:600}
+.field{display:flex; flex-direction:column; gap:8px}
+
+/* barra fija: histograma en vivo */
+.live{position:sticky; top:env(safe-area-inset-top, 0px); z-index:4; background:var(--panel); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); padding:10px 14px; display:flex; flex-direction:column; gap:6px}
+.lvtop{display:flex; justify-content:space-between; gap:8px; font:500 12px var(--mono); color:var(--muted); white-space:nowrap}
+.lvtop b{color:var(--fg); font-weight:600}
+.lvh{display:grid; grid-template-columns:repeat(var(--n,4),1fr); gap:6px}
+.lvc{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:0}
+.lvc .vt{width:100%; height:28px; background:var(--panel2); border-radius:4px; position:relative; overflow:hidden}
+.lvc .vt i{position:absolute; left:0; right:0; bottom:0; height:0; background:var(--accent); opacity:.45; transition:height .25s ease}
+.lvc.max .vt i{opacity:1}
+.lvc .ll{font:500 10px var(--mono); color:var(--muted)}
+.lvc .lp{font:600 10px var(--mono)}
+
+nav.tabs{
+  position:fixed; left:0; right:0; bottom:0; z-index:6; background:var(--panel); border-top:1px solid var(--line);
+  display:flex; justify-content:center;
+  padding:8px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+nav.tabs .in{display:grid; grid-template-columns:repeat(2,1fr); gap:6px; width:100%; max-width:640px; background:var(--panel2); border-radius:12px; padding:4px}
+nav.tabs button{font:600 15px var(--sans); min-height:44px; border:0; border-radius:9px; background:transparent; color:var(--muted); cursor:pointer}
+nav.tabs button[aria-current="page"]{background:var(--panel); color:var(--fg); box-shadow:0 1px 3px rgba(0,0,0,.18)}
+button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+
+/* problema */
+.optrow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.mini{display:flex; gap:6px}
+.mini button,.boxes button{font:600 15px var(--mono); min-width:46px; min-height:42px; border:1px solid var(--line); border-radius:var(--r2); background:var(--panel2); color:var(--fg); cursor:pointer}
+.mini button[aria-pressed="true"],.boxes button[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+.mini button.best{box-shadow:inset 0 -3px 0 var(--accent)}
+.boxes{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
+.theory{font-size:14px; background:var(--panel2); border-radius:var(--r2); padding:10px 12px}
+.theory b{font-family:var(--mono)}
+
+/* recorrido */
+.tour{gap:12px}
+.tsteps{display:flex; gap:4px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none}
+.tsteps button{flex:1 0 auto; min-width:58px; display:flex; flex-direction:column; align-items:stretch; gap:5px; background:none; border:0; color:var(--muted); font:500 11px var(--sans); cursor:pointer; padding:4px 2px; white-space:nowrap}
+.tsteps button i{display:block; height:4px; border-radius:2px; background:var(--line); transition:background .3s}
+.tsteps button.done i{background:var(--accent); opacity:.45}
+.tsteps button[aria-current="step"]{color:var(--fg); font-weight:600}
+.tsteps button[aria-current="step"] i{background:var(--accent); opacity:1}
+.tbody{display:flex; flex-direction:column; gap:8px}
+.tbody.in{animation:fadein .35s ease}
+.th{font:600 22px/1.2 var(--sans); margin:0; text-wrap:balance}
+.ttext{font-size:16px}
+.look{display:flex; flex-direction:column; gap:2px; background:var(--panel2); border-radius:var(--r2); padding:10px 12px; font-size:15px}
+.tctl{display:grid; grid-template-columns:1fr 1.5fr auto; gap:8px}
+.tctl .btn{padding:0 10px}
+details.cfg{border-top:1px solid var(--line); padding-top:4px}
+details.cfg summary{cursor:pointer; font:600 14px var(--sans); color:var(--accent-text); min-height:40px; display:flex; align-items:center; gap:6px; list-style:none}
+details.cfg summary::-webkit-details-marker{display:none}
+details.cfg summary::before{content:"+"; font:600 18px var(--mono); width:18px}
+details.cfg[open] summary::before{content:"−"}
+.cfgin{display:flex; flex-direction:column; gap:12px; padding-top:6px}
+@keyframes fadein{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+@keyframes pop{0%{transform:scale(.55)} 60%{transform:scale(1.12)} 100%{transform:scale(1)}}
+@keyframes glow{0%,100%{background:rgba(11,130,121,.10)} 50%{background:rgba(11,130,121,.26)}}
+.cell.new .g,.cell.new .dot,.cell.new .tgt,.cell.new .swp{animation:pop .35s ease}
+@media (prefers-reduced-motion: reduce){.tbody.in,.cell.new .g,.cell.new .dot,.cell.new .tgt,.cell.new .swp,.cell.hl{animation:none}}
+
+/* paleta */
+.palette{display:flex; gap:8px; overflow-x:auto; padding:3px}
+.tool{
+  flex:none; width:62px; min-height:64px; border:1px solid var(--line); border-radius:var(--r2); background:var(--panel2); color:var(--fg); cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font:600 12px var(--mono); padding:6px 0;
+}
+.tool small{font:400 10px var(--sans); color:var(--muted)}
+.tool .sw{min-width:28px; height:28px; padding:0 3px; border-radius:7px; display:flex; align-items:center; justify-content:center; font:600 14px var(--mono)}
+.tool .sw.h{background:var(--accent); color:var(--accent-ink)}
+.tool .sw.x{background:var(--fg); color:var(--bg)}
+.tool .sw.z{border:2px solid var(--ph1); color:var(--ph1)}
+.tool .sw.ph{border:2px solid var(--ph0); color:var(--ph0)}
+.tool .sw.c::before{content:""; width:11px; height:11px; border-radius:50%; background:var(--fg)}
+.tool .sw.e{color:var(--muted); font-size:20px}
+.tool[aria-pressed="true"]{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent)}
+.tool:disabled{opacity:.35; cursor:not-allowed}
+
+/* lienzo */
+.canvas{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px 8px; overflow-x:auto; -webkit-overflow-scrolling:touch}
+.grid{display:grid; grid-auto-rows:50px; row-gap:10px; width:max-content}
+.qlabel{font:500 13px var(--mono); display:flex; align-items:center; color:var(--muted)}
+.cell{position:relative; width:50px; height:50px; padding:0; border:0; background:transparent; cursor:pointer; color:var(--fg); border-radius:8px}
+.cell::before{content:""; position:absolute; left:0; right:0; top:50%; height:2px; background:var(--muted); opacity:.5; transform:translateY(-1px)}
+.cell .g{position:absolute; inset:6px; z-index:2; display:flex; align-items:center; justify-content:center; font:600 16px var(--mono); border-radius:8px; border:2px solid var(--fg); background:var(--panel)}
+.cell .g.h{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.cell .g.x{background:var(--fg); color:var(--bg)}
+.cell .g.z{border-color:var(--ph1); color:var(--ph1)}
+.cell .g.ph{border-color:var(--ph0); color:var(--ph0)}
+.cell .dot{position:absolute; z-index:2; left:50%; top:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:var(--fg)}
+.cell .tgt{position:absolute; z-index:2; left:50%; top:50%; width:28px; height:28px; margin:-14px 0 0 -14px; border-radius:50%; border:2px solid var(--fg); background:var(--panel2); display:flex; align-items:center; justify-content:center; font:600 21px/1 var(--mono)}
+.cell .swp{position:absolute; z-index:2; left:50%; top:50%; transform:translate(-50%,-52%); font:600 26px/1 var(--mono)}
+.cell.top::after{content:""; position:absolute; z-index:1; left:50%; top:50%; width:2px; height:calc(100% + 10px); background:var(--fg); transform:translateX(-1px)}
+.cell.hl{background:rgba(11,130,121,.16); animation:glow 1.6s ease-in-out infinite}
+.cell.pend .dot{background:var(--accent); box-shadow:0 0 0 4px rgba(11,130,121,.25)}
+.cell.empty:hover::after,.cell.empty:active::after{content:""; position:absolute; inset:8px; border:2px dashed var(--accent); border-radius:8px}
+
+.insp{display:flex; flex-direction:column; gap:2px}
+.insp input[type=range]{width:100%; min-height:34px; accent-color:var(--accent)}
+
+/* resultado */
+.vtabs{display:flex; gap:4px; background:var(--panel2); border-radius:12px; padding:4px; overflow-x:auto}
+.vtabs button{flex:1 0 auto; font:600 13px var(--sans); min-height:40px; padding:0 12px; border:0; border-radius:9px; background:transparent; color:var(--muted); cursor:pointer; white-space:nowrap}
+.vtabs button[aria-pressed="true"]{background:var(--panel); color:var(--fg); box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.view{display:flex; flex-direction:column; gap:10px}
+svg.sph{width:100%; height:auto; max-height:340px; touch-action:none; cursor:grab; display:block}
+svg.sph:active{cursor:grabbing}
+svg.flat{width:100%; height:auto; display:block}
+.sl{fill:none; stroke:var(--line); stroke-width:1.2}
+.sa{stroke:var(--muted); stroke-width:1; opacity:.7}
+.st{fill:var(--fg); font:600 12px var(--mono)}
+.stm{fill:var(--muted); font:400 11px var(--mono)}
+.legend{display:flex; flex-wrap:wrap; gap:4px 14px; font:400 12px var(--mono); color:var(--muted); align-items:center}
+.legend i{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:-1px}
+.bars{display:flex; flex-direction:column; gap:10px}
+.row{display:grid; grid-template-columns:38px 1fr 76px; gap:10px; align-items:center}
+.row .b{font:600 14px var(--mono)}
+.track{height:24px; background:var(--panel2); border-radius:7px; position:relative; overflow:hidden}
+.fill{position:absolute; left:0; top:0; bottom:0; background:var(--accent); width:0; border-radius:7px}
+.row .v{font:600 13px var(--mono); text-align:right; white-space:nowrap}
+.row .m{grid-column:2 / 4; font:400 12px var(--mono); color:var(--muted); margin-top:-6px}
+@media (prefers-reduced-motion: reduce){.fill,.lvc .vt i{transition:none}}
+
+.btn{font:600 16px var(--sans); min-height:48px; padding:0 22px; border:0; border-radius:var(--r2); background:var(--accent); color:var(--accent-ink); cursor:pointer}
+.btn:disabled{opacity:.6; cursor:progress}
+.btn.ghost{background:transparent; color:var(--fg); border:1px solid var(--line)}
+.btnrow{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.chip{font:500 14px var(--sans); min-height:44px; padding:0 14px; border:1px solid var(--line); border-radius:var(--r2); background:transparent; color:var(--fg); cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent); color:var(--accent-text); background:var(--panel2)}
+.shots,.fmt{display:flex; gap:6px}
+.shots button,.fmt button{font:500 14px var(--mono); min-height:40px; border:1px solid var(--line); border-radius:var(--r2); background:var(--panel2); color:var(--fg); cursor:pointer; flex:1}
+.shots button[aria-pressed="true"],.fmt button[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+textarea{width:100%; min-height:220px; resize:vertical; background:var(--panel2); color:var(--fg); border:1px solid var(--line); border-radius:var(--r2); font:400 13px/1.55 var(--mono); padding:12px; tab-size:2; white-space:pre; overflow-x:auto}
+.out{margin:0; background:var(--panel2); border:1px solid var(--line); border-radius:var(--r2); padding:12px; font:400 13px/1.5 var(--mono); white-space:pre; overflow:auto; max-height:340px; color:var(--fg)}
+.out .e{color:var(--bad)} .out .i{color:var(--muted)}
+.msg{font-size:14px; min-height:20px}
+.msg.err{color:var(--bad)} .msg.ok{color:var(--good)}
+
+/* recursos */
+.links{display:flex; flex-direction:column; gap:8px}
+a.link,div.link{display:flex; flex-direction:column; gap:2px; text-decoration:none; color:var(--fg); padding:12px 14px; border:1px solid var(--line); border-radius:var(--r2); background:var(--panel2)}
+.link strong{font-weight:600; color:var(--accent-text)}
+.link span{font-size:14px; color:var(--muted)}
+.stat{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; text-align:center}
+.stat div{background:var(--panel2); border-radius:var(--r2); padding:10px 2px}
+.stat b{display:block; font:600 18px var(--mono)} .stat i{font:normal 12px var(--mono); color:var(--muted)}
+.stat .win{background:var(--accent); color:var(--accent-ink)} .stat .win i{color:var(--accent-ink)}
+ol.steps,ul.plain{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:8px}
+dl.comp{margin:0; display:flex; flex-direction:column; gap:12px}
+dl.comp dt{font-weight:600} dl.comp dd{margin:0; color:var(--muted); font-size:14px}
+table.tl{border-collapse:collapse; width:100%; font-size:14px}
+table.tl th,table.tl td{border-top:1px solid var(--line); padding:8px 6px; text-align:left; vertical-align:top}
+table.tl th{font:500 12px var(--mono); color:var(--muted); letter-spacing:.06em; text-transform:uppercase}
+.scrollx{overflow-x:auto}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="appbar">
+    <div class="logo" aria-hidden="true"></div>
+    <div><h1>Laboratorio Grover</h1><p class="sub">AI After Hours · Visible Builders</p></div>
+  </header>
+
+  <!-- PROBAR -->
+  <section id="probar" aria-label="Probar el algoritmo">
+    <div class="wrap">
+      <div class="live" role="group" aria-label="Probabilidades en vivo">
+        <div class="lvtop"><span id="lvl">Ideal · en vivo</span><span id="lvtop"></span></div>
+        <div class="lvh" id="lvh"></div>
+      </div>
+
+      <div class="card tour" id="tour">
+        <div class="tsteps" id="tsteps" aria-label="Pasos del algoritmo"></div>
+        <div class="tbody" id="tbody" aria-live="polite">
+          <p class="label" id="tkick"></p>
+          <h2 class="th" id="ttitle"></h2>
+          <p class="ttext" id="ttext"></p>
+          <p class="look" id="tlookw"><span class="label">Qué mirar</span><span id="tlook"></span></p>
+        </div>
+        <div class="tctl">
+          <button class="btn ghost" id="tprev" type="button">Atrás</button>
+          <button class="btn" id="tnext" type="button">Siguiente</button>
+          <button class="chip" id="tplay" type="button" aria-pressed="false">Reproducir</button>
+        </div>
+        <details class="cfg" id="cfg">
+          <summary>Cambiar caja, qubits o iteraciones</summary>
+          <div class="cfgin">
+            <div class="optrow">
+              <span class="label">Qubits</span>
+              <div class="mini" id="qsel" role="group" aria-label="Número de qubits">
+                <button type="button" data-n="2">2 qubits</button>
+                <button type="button" data-n="3">3 qubits</button>
+              </div>
+            </div>
+        <div class="field">
+          <span class="label">¿Dónde está el tesoro?</span>
+          <div class="boxes" id="boxes" role="group" aria-label="Caja del tesoro"></div>
+        </div>
+        <div class="field">
+          <span class="label">Iteraciones de Grover</span>
+          <div class="mini" id="iters" role="group" aria-label="Iteraciones"></div>
+        </div>
+        <p class="theory" id="theory"></p>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>Resultado</h2>
+        <div class="vtabs" id="vtabs" role="group" aria-label="Visualización">
+          <button type="button" data-v="bars" aria-pressed="true">Probabilidades</button>
+          <button type="button" data-v="qs" aria-pressed="false">Q-sphere</button>
+          <button type="button" data-v="bl" aria-pressed="false">Bloch</button>
+          <button type="button" data-v="ph" aria-pressed="false">Fase</button>
+          <button type="button" data-v="sv" aria-pressed="false">Vector</button>
+        </div>
+        <div class="view" id="view"></div>
+        <p class="small" id="vnote"></p>
+        <div class="field">
+          <span class="label">Intentos (shots)</span>
+          <div class="shots" id="shots" role="group" aria-label="Número de intentos">
+            <button type="button" data-n="1" aria-pressed="false">1</button>
+            <button type="button" data-n="10" aria-pressed="false">10</button>
+            <button type="button" data-n="100" aria-pressed="false">100</button>
+            <button type="button" data-n="1024" aria-pressed="true">1024</button>
+          </div>
+        </div>
+        <div class="btnrow">
+          <button class="btn" id="run" type="button">Medir</button>
+          <button class="chip" id="noise" type="button" aria-pressed="true">Ruido de chip: encendido</button>
+        </div>
+        <p class="small" id="note"></p>
+      </div>
+
+      <div class="card">
+        <h2>Circuito</h2>
+        <div class="palette" id="palette" role="group" aria-label="Puertas"></div>
+        <div class="canvas"><div class="grid" id="grid"></div></div>
+        <p class="hint" id="canhint" role="status"></p>
+        <div class="insp">
+          <label class="label" for="step">Inspect · paso a paso</label>
+          <input type="range" id="step" min="0" max="0" value="0" step="1">
+          <p class="small" id="steptxt"></p>
+        </div>
+        <div class="btnrow"><button class="btn ghost" id="clear" type="button">Limpiar circuito</button></div>
+      </div>
+
+      <div class="card">
+        <h2>Código</h2>
+        <p class="small">Escribe y el circuito cambia; toca el circuito y el código cambia. Ejecutar Python corre el código completo en tu celular, con un mini-Qiskit.</p>
+        <div class="fmt" id="fmt" role="group" aria-label="Formato del código">
+          <button type="button" data-f="qk" aria-pressed="true">Qiskit</button>
+          <button type="button" data-f="qs" aria-pressed="false">OpenQASM 2</button>
+        </div>
+        <textarea id="paste" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Código del circuito"></textarea>
+        <div class="btnrow">
+          <button class="btn" id="runpy" type="button">Ejecutar Python</button>
+          <button class="chip" id="copy" type="button">Copiar código</button>
+        </div>
+        <p class="msg" id="loadmsg" role="status"></p>
+        <pre class="out" id="pyout" aria-label="Salida de Python" hidden></pre>
+        <p class="hint">Mini-Qiskit: QuantumCircuit con h, x, y, z, s, sdg, t, tdg, sx, rx, ry, rz, p, cx, cz, cp, swap, ccx, ccz, measure y measure_all, hasta 12 qubits; AerSimulator, transpile, Statevector y plot_histogram en texto. El dibujo muestra circuitos de 2 o 3 qubits. La primera ejecución descarga Python (unos 10 MB).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECURSOS -->
+  <section id="recursos" aria-label="Recursos" hidden>
+    <div class="wrap">
+      <div class="card">
+        <div>
+          <h2>Mi resultado en un chip real</h2>
+          <p class="small" style="margin-top:4px">Grover con 2 qubits y 4 cajas, en un procesador IBM Heron, 1024 repeticiones.</p>
+        </div>
+        <div class="stat">
+          <div class="win"><b>921</b><i>11</i></div>
+          <div><b>58</b><i>10</i></div>
+          <div><b>37</b><i>01</i></div>
+          <div><b>8</b><i>00</i></div>
+        </div>
+        <p class="small">La caja 11 salió el 89,9 % de las veces. El resto es ruido del chip, no un fallo del algoritmo.</p>
+      </div>
+
+      <div class="card">
+        <h2>Grover con 2 qubits, paso a paso</h2>
+        <div class="scrollx">
+          <table class="tl">
+            <thead><tr><th>Después de</th><th>Amplitudes (00, 01, 10, 11)</th><th>Probabilidad</th></tr></thead>
+            <tbody>
+              <tr><td>H en q0 y q1</td><td>½, ½, ½, ½</td><td>25 % cada caja</td></tr>
+              <tr><td>CZ (oráculo)</td><td>½, ½, ½, −½</td><td>25 % cada caja; cambió la fase de 11</td></tr>
+              <tr><td>H, X, CZ, X, H (difusión)</td><td>0, 0, 0, −1</td><td>100 % en 11</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small">El oráculo no mueve las barras, solo la fase: en el Q-sphere el punto de 11 cambia de color. La difusión es la que mueve las probabilidades. El −1 final es una fase global: no cambia lo que mides.</p>
+      </div>
+
+      <div class="card">
+        <h2>Más cajas: 3 qubits</h2>
+        <p class="small">Con 8 cajas una sola vuelta no basta. Cada iteración repite oráculo y difusión, y si te pasas la probabilidad vuelve a bajar.</p>
+        <div class="scrollx">
+          <table class="tl">
+            <thead><tr><th>Iteraciones</th><th>Probabilidad del tesoro</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>78,1 %</td></tr>
+              <tr><td>2 (óptimo)</td><td>94,5 %</td></tr>
+              <tr><td>3</td><td>33,0 %</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small">La regla: unas (π/4)·√N iteraciones. Un computador clásico revisa en promedio N/2 cajas; Grover necesita del orden de √N consultas al oráculo.</p>
+      </div>
+
+      <div class="card">
+        <h2>Qué verás en el Composer</h2>
+        <p class="small">Las visualizaciones en vivo del Composer vienen de un simulador ideal, no del chip que elijas, e ignoran las mediciones. El resultado del chip aparece como histograma en la página del trabajo.</p>
+        <dl class="comp">
+          <div><dt>Probabilities</dt><dd>Histograma de probabilidades por estado. No muestra la fase.</dd></div>
+          <div><dt>Q-sphere</dt><dd>Cada estado es un punto en una esfera: el tamaño es la probabilidad y el color es la fase. 00…0 va en el polo norte y 11…1 en el sur; los estados con igual número de unos comparten latitud.</dd></div>
+          <div><dt>Phase disk</dt><dd>Un disco por qubit: probabilidad de |1⟩, fase local y pureza (1 = sin enlace).</dd></div>
+          <div><dt>Statevector</dt><dd>La magnitud de cada amplitud, con la fase en color.</dd></div>
+        </dl>
+      </div>
+
+      <div class="card">
+        <h2>Este laboratorio y el Composer</h2>
+        <ul class="plain">
+          <li>Igual: vista en vivo con simulador ideal, Q-sphere, statevector, disco de fase, Inspect paso a paso y código sincronizado con el circuito.</li>
+          <li>Distinto: aquí no hay chip real. El ruido es un modelo simple para dar una idea. El dibujo llega a 3 qubits y a las puertas H, X, Y, Z, S, T, CX, CZ, SWAP, CCX y CCZ.</li>
+          <li>Los colores de fase siguen la idea del Composer, pero no copian su paleta exacta. La esfera de Bloch es un extra.</li>
+          <li>El Composer escribe OpenQASM; aquí también puedes correr Python con un mini-Qiskit que imita la API básica de Qiskit.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2>Para seguir</h2>
+        <div class="links" style="margin-top:10px">
+          <a class="link" href="https://claude.ai/artifact/ffee3f61-af35-43be-aca8-445e1c167fc9" target="_blank" rel="noopener"><strong>Diapositivas de la charla</strong><span>Build real-time quantum apps with AI</span></a>
+          <a class="link" href="https://quantum.cloud.ibm.com/composer" target="_blank" rel="noopener"><strong>IBM Quantum Composer</strong><span>Arrastra puertas y córrelo en un chip real</span></a>
+          <a class="link" href="https://quantum.cloud.ibm.com/learning/en/courses/fundamentals-of-quantum-algorithms/grover-algorithm/grover-algorithm-description" target="_blank" rel="noopener"><strong>Grover en IBM Quantum Learning</strong><span>La explicación completa y la matemática</span></a>
+          <a class="link" href="https://quantum.cloud.ibm.com/docs/guides/composer" target="_blank" rel="noopener"><strong>Guía del Composer</strong><span>Qué significa cada visualización</span></a>
+          <a class="link" href="https://quantum.cloud.ibm.com/docs/guides/plans-overview" target="_blank" rel="noopener"><strong>Planes de IBM Quantum</strong><span>El plan abierto es gratis: 10 minutos de chip real cada 28 días</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Cómo llegar a un chip real</h2>
+        <ol class="steps">
+          <li>Crea una cuenta gratuita de IBM Quantum.</li>
+          <li>Abre el Composer y elige File &gt; New &gt; QASM2.</li>
+          <li>En Probar, cambia el código a OpenQASM 2, cópialo y pégalo.</li>
+          <li>Pulsa Run, elige un procesador y espera en la cola.</li>
+        </ol>
+        <p class="small">Los minutos disponibles y el nombre del chip los ves en tu consola de IBM.</p>
+      </div>
+
+      <div class="card">
+        <h2>Salome Arboleda</h2>
+        <p class="small">Software Developer &amp; Tech Enthusiast</p>
+        <div class="links">
+          <a class="link" href="https://github.com/DvvSalome" target="_blank" rel="noopener"><strong>GitHub</strong><span>DvvSalome</span></a>
+          <a class="link" href="https://www.instagram.com/dvvsalom3" target="_blank" rel="noopener"><strong>Instagram</strong><span>@dvvsalom3</span></a>
+          <div class="link"><strong>LinkedIn</strong><span>Busca: Salome Arboleda</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" aria-label="Secciones"><div class="in">
+  <button type="button" data-tab="probar">Probar</button>
+  <button type="button" data-tab="recursos">Recursos</button>
+</div></nav>
+
+<script type="text/plain" id="qiskit-src">
+# Mini-Qiskit para el navegador (Laboratorio Grover).
+# Implementa en Python puro una parte de la API de Qiskit: QuantumCircuit,
+# AerSimulator, transpile, Statevector y plot_histogram (en texto).
+# Simula el vector de estado exacto; no es el Qiskit oficial.
+import math, cmath, random
+
+_SQ = 1 / math.sqrt(2)
+_registry = []
+_last = {"counts": None, "shots": 0, "circuit": None}
+MAX_QUBITS = 12
+
+
+def _m1(name, p):
+    if name == "h": return ((_SQ, _SQ), (_SQ, -_SQ))
+    if name == "x": return ((0, 1), (1, 0))
+    if name == "y": return ((0, -1j), (1j, 0))
+    if name == "z": return ((1, 0), (0, -1))
+    if name == "s": return ((1, 0), (0, 1j))
+    if name == "sdg": return ((1, 0), (0, -1j))
+    if name == "t": return ((1, 0), (0, cmath.exp(1j * math.pi / 4)))
+    if name == "tdg": return ((1, 0), (0, cmath.exp(-1j * math.pi / 4)))
+    if name == "sx": return ((0.5 + 0.5j, 0.5 - 0.5j), (0.5 - 0.5j, 0.5 + 0.5j))
+    if name == "id": return ((1, 0), (0, 1))
+    th = float(p[0])
+    if name == "rx":
+        c, s = math.cos(th / 2), math.sin(th / 2)
+        return ((c, -1j * s), (-1j * s, c))
+    if name == "ry":
+        c, s = math.cos(th / 2), math.sin(th / 2)
+        return ((c, -s), (s, c))
+    if name == "rz": return ((cmath.exp(-1j * th / 2), 0), (0, cmath.exp(1j * th / 2)))
+    if name == "p": return ((1, 0), (0, cmath.exp(1j * th)))
+    raise ValueError("Puerta no soportada: " + name)
+
+
+def _apply(sv, n, op):
+    name, qs, p = op
+    N = 1 << n
+    if name in ("measure", "barrier"):
+        return
+    if name == "cx":
+        c, t = qs
+        for i in range(N):
+            if (i >> c) & 1 and not (i >> t) & 1:
+                j = i | (1 << t); sv[i], sv[j] = sv[j], sv[i]
+    elif name == "cz":
+        a, b = qs
+        for i in range(N):
+            if (i >> a) & 1 and (i >> b) & 1: sv[i] = -sv[i]
+    elif name == "cp":
+        a, b = qs; ph = cmath.exp(1j * float(p[0]))
+        for i in range(N):
+            if (i >> a) & 1 and (i >> b) & 1: sv[i] *= ph
+    elif name == "swap":
+        a, b = qs
+        for i in range(N):
+            if (i >> a) & 1 and not (i >> b) & 1:
+                j = (i & ~(1 << a)) | (1 << b); sv[i], sv[j] = sv[j], sv[i]
+    elif name == "ccz":
+        a, b, c = qs
+        for i in range(N):
+            if (i >> a) & 1 and (i >> b) & 1 and (i >> c) & 1: sv[i] = -sv[i]
+    elif name == "ccx":
+        c1, c2, t = qs
+        for i in range(N):
+            if (i >> c1) & 1 and (i >> c2) & 1 and not (i >> t) & 1:
+                j = i | (1 << t); sv[i], sv[j] = sv[j], sv[i]
+    else:
+        (a, b), (c, d) = _m1(name, p)
+        q = qs[0]
+        for i in range(N):
+            if not (i >> q) & 1:
+                j = i | (1 << q); x, y = sv[i], sv[j]
+                sv[i] = a * x + b * y; sv[j] = c * x + d * y
+
+
+class QuantumCircuit:
+    def __init__(self, num_qubits=0, num_clbits=0, name=None):
+        if not isinstance(num_qubits, int) or not isinstance(num_clbits, int):
+            raise TypeError("Usa QuantumCircuit(numero_de_qubits, numero_de_bits)")
+        if num_qubits > MAX_QUBITS:
+            raise ValueError("Este simulador acepta hasta %d qubits" % MAX_QUBITS)
+        self.num_qubits = num_qubits
+        self.num_clbits = num_clbits
+        self.name = name or "circuit"
+        self.data = []
+        _registry.append(self)
+
+    # ---- utilidades ----
+    def _qs(self, q, n=None, kind="qubit"):
+        n = self.num_qubits if n is None else n
+        if isinstance(q, range): q = list(q)
+        lst = list(q) if isinstance(q, (list, tuple)) else [q]
+        for x in lst:
+            if not isinstance(x, int) or x < 0 or x >= n:
+                raise IndexError("El %s %r no existe: el circuito tiene %d" % (kind, x, n))
+        return lst
+
+    def _add(self, name, qs, p=()):
+        self.data.append((name, tuple(qs), tuple(p)))
+        return self
+
+    def _one(self, name, q, p=()):
+        for x in self._qs(q): self._add(name, [x], p)
+        return self
+
+    def _two(self, name, a, b, p=()):
+        A, B = self._qs(a), self._qs(b)
+        if len(A) != len(B):
+            raise ValueError("Las listas de qubits deben tener el mismo largo")
+        for x, y in zip(A, B):
+            if x == y: raise ValueError("Una puerta de dos qubits necesita dos qubits distintos")
+            self._add(name, [x, y], p)
+        return self
+
+    # ---- puertas de un qubit ----
+    def h(self, q): return self._one("h", q)
+    def x(self, q): return self._one("x", q)
+    def y(self, q): return self._one("y", q)
+    def z(self, q): return self._one("z", q)
+    def s(self, q): return self._one("s", q)
+    def sdg(self, q): return self._one("sdg", q)
+    def t(self, q): return self._one("t", q)
+    def tdg(self, q): return self._one("tdg", q)
+    def sx(self, q): return self._one("sx", q)
+    def id(self, q): return self._one("id", q)
+    def rx(self, theta, q): return self._one("rx", q, (theta,))
+    def ry(self, theta, q): return self._one("ry", q, (theta,))
+    def rz(self, theta, q): return self._one("rz", q, (theta,))
+    def p(self, theta, q): return self._one("p", q, (theta,))
+
+    # ---- puertas de dos y tres qubits ----
+    def cx(self, c, t): return self._two("cx", c, t)
+    cnot = cx
+    def cz(self, a, b): return self._two("cz", a, b)
+    def cp(self, theta, a, b): return self._two("cp", a, b, (theta,))
+    def swap(self, a, b): return self._two("swap", a, b)
+    def ccx(self, c1, c2, t):
+        a, b, c = self._qs(c1)[0], self._qs(c2)[0], self._qs(t)[0]
+        if len({a, b, c}) < 3: raise ValueError("ccx necesita tres qubits distintos")
+        return self._add("ccx", [a, b, c])
+    toffoli = ccx
+    def ccz(self, a, b, c):
+        x, y, z = self._qs(a)[0], self._qs(b)[0], self._qs(c)[0]
+        if len({x, y, z}) < 3: raise ValueError("ccz necesita tres qubits distintos")
+        return self._add("ccz", [x, y, z])
+
+    # ---- medición ----
+    def measure(self, q, c):
+        Q = self._qs(q); C = self._qs(c, self.num_clbits, "bit clásico")
+        if len(Q) != len(C):
+            raise ValueError("measure necesita tantos qubits como bits clásicos")
+        for x, y in zip(Q, C): self._add("measure", [x], (y,))
+        return self
+
+    def measure_all(self):
+        if self.num_clbits < self.num_qubits: self.num_clbits = self.num_qubits
+        return self.measure(list(range(self.num_qubits)), list(range(self.num_qubits)))
+
+    def barrier(self, *args): return self._add("barrier", [])
+
+    # ---- información ----
+    def size(self): return len([d for d in self.data if d[0] not in ("barrier",)])
+    def count_ops(self):
+        out = {}
+        for d in self.data:
+            if d[0] != "barrier": out[d[0]] = out.get(d[0], 0) + 1
+        return out
+    def depth(self):
+        lv = [0] * self.num_qubits; m = 0
+        for name, qs, p in self.data:
+            if name == "barrier" or not qs: continue
+            d = max(lv[q] for q in qs) + 1
+            for q in qs: lv[q] = d
+            m = max(m, d)
+        return m
+    def copy(self):
+        c = QuantumCircuit(self.num_qubits, self.num_clbits, self.name); c.data = list(self.data); return c
+
+    def draw(self, *args, **kwargs):
+        n = self.num_qubits
+        sym = {"cx": ("■", "⊕"), "cz": ("■", "■"), "cp": ("■", "P"), "swap": ("x", "x")}
+        level = [0] * n; cols = []
+        for name, qs, p in self.data:
+            span = list(range(n)) if name == "barrier" else list(range(min(qs), max(qs) + 1))
+            if not span: continue
+            c = max(level[q] for q in span)
+            for q in span: level[q] = c + 1
+            while len(cols) <= c: cols.append(["───"] * n)
+            cells = cols[c]
+            if name == "barrier":
+                for q in span: cells[q] = "─░─"
+            elif name == "measure":
+                cells[qs[0]] = "─M─"
+            elif name in sym or name in ("ccx", "ccz"):
+                for q in span: cells[q] = "─│─"
+                if name == "ccx":
+                    cells[qs[0]] = "─■─"; cells[qs[1]] = "─■─"; cells[qs[2]] = "─⊕─"
+                elif name == "ccz":
+                    for q in qs: cells[q] = "─■─"
+                else:
+                    cells[qs[0]] = "─" + sym[name][0] + "─"; cells[qs[1]] = "─" + sym[name][1] + "─"
+            else:
+                g = name.upper()
+                cells[qs[0]] = ("─" + g + "─") if len(g) == 1 else g[:3].ljust(3, "─")
+        rows = []
+        for q in range(n):
+            label = ("q%d: " % q).rjust(len("q%d: " % (n - 1)))
+            rows.append(label + "─".join(col[q] for col in cols) + "─")
+        return "\n".join(rows)
+
+    def __str__(self): return self.draw()
+    def __repr__(self): return "<QuantumCircuit %d qubits, %d bits, %d operaciones>" % (self.num_qubits, self.num_clbits, self.size())
+
+
+def _state(qc):
+    sv = [0j] * (1 << qc.num_qubits); sv[0] = 1 + 0j
+    for op in qc.data: _apply(sv, qc.num_qubits, op)
+    return sv
+
+
+def _sample_index(probs, r):
+    s = 0.0
+    for i, pr in enumerate(probs):
+        s += pr
+        if r < s: return i
+    return len(probs) - 1
+
+
+def _key(bits, nc):
+    return "".join(str(bits[k]) for k in range(nc - 1, -1, -1))
+
+
+def _run_counts(qc, shots, rng):
+    meas = [d for d in qc.data if d[0] == "measure"]
+    if not meas:
+        raise RuntimeError("Tu circuito no tiene mediciones. Agrega qc.measure(...) o qc.measure_all().")
+    # ¿Todas las mediciones al final? Entonces basta un vector de estado.
+    seen = set(); final_only = True
+    for name, qs, p in qc.data:
+        if name == "measure": seen.add(qs[0])
+        elif name != "barrier" and any(q in seen for q in qs): final_only = False; break
+    counts = {}
+    if final_only:
+        sv = _state(qc)
+        probs = [abs(a) ** 2 for a in sv]
+        for _ in range(shots):
+            i = _sample_index(probs, rng.random())
+            bits = [0] * qc.num_clbits
+            for name, qs, p in meas: bits[p[0]] = (i >> qs[0]) & 1
+            k = _key(bits, qc.num_clbits); counts[k] = counts.get(k, 0) + 1
+        return counts
+    # Mediciones a mitad del circuito: se simula disparo por disparo con colapso.
+    n = qc.num_qubits
+    for _ in range(shots):
+        sv = [0j] * (1 << n); sv[0] = 1 + 0j; bits = [0] * qc.num_clbits
+        for op in qc.data:
+            if op[0] == "measure":
+                q = op[1][0]
+                p1 = sum(abs(a) ** 2 for i, a in enumerate(sv) if (i >> q) & 1)
+                out = 1 if rng.random() < p1 else 0
+                norm = math.sqrt(p1 if out else 1 - p1) or 1
+                for i in range(len(sv)):
+                    sv[i] = sv[i] / norm if ((i >> q) & 1) == out else 0j
+                bits[op[2][0]] = out
+            else:
+                _apply(sv, n, op)
+        k = _key(bits, qc.num_clbits); counts[k] = counts.get(k, 0) + 1
+    return counts
+
+
+class Result:
+    def __init__(self, counts_list): self._c = counts_list
+    def get_counts(self, experiment=None):
+        if experiment is None:
+            return self._c[0] if len(self._c) == 1 else list(self._c)
+        if isinstance(experiment, int): return self._c[experiment]
+        return self._c[0]
+
+
+class Job:
+    def __init__(self, result): self._r = result
+    def result(self): return self._r
+    def status(self): return "DONE"
+    def job_id(self): return "local"
+
+
+class AerSimulator:
+    name = "aer_simulator (mini, navegador)"
+    def __init__(self, *args, **kwargs): pass
+    def run(self, circuits, shots=1024, seed_simulator=None, **kwargs):
+        cs = circuits if isinstance(circuits, (list, tuple)) else [circuits]
+        rng = random.Random(seed_simulator)
+        out = [_run_counts(c, int(shots), rng) for c in cs]
+        _last["counts"] = out[-1]; _last["shots"] = int(shots); _last["circuit"] = cs[-1]
+        return Job(Result(out))
+    def __repr__(self): return "AerSimulator('aer_simulator')"
+
+
+class _Aer:
+    def get_backend(self, name="aer_simulator"): return AerSimulator()
+Aer = _Aer()
+
+
+def transpile(circuits, backend=None, **kwargs):
+    return circuits
+
+
+class Statevector:
+    def __init__(self, data):
+        if isinstance(data, QuantumCircuit):
+            self._qc = data; self.data = _state(data); self.num_qubits = data.num_qubits
+        else:
+            self._qc = None; self.data = [complex(x) for x in data]
+            self.num_qubits = max(0, (len(self.data) - 1).bit_length())
+    @classmethod
+    def from_instruction(cls, qc): return cls(qc)
+    @classmethod
+    def from_label(cls, label):
+        n = len(label); sv = [0j] * (1 << n); sv[int(label, 2)] = 1 + 0j; return cls(sv)
+    def probabilities(self): return [abs(a) ** 2 for a in self.data]
+    def probabilities_dict(self, decimals=None):
+        out = {}
+        for i, a in enumerate(self.data):
+            pr = abs(a) ** 2
+            if pr > 1e-12:
+                out[format(i, "0%db" % self.num_qubits)] = round(pr, decimals) if decimals is not None else pr
+        return out
+    def __repr__(self):
+        def f(z):
+            z = complex(round(z.real, 4), round(z.imag, 4))
+            return ("%g" % z.real) if abs(z.imag) < 1e-9 else ("%g%+gj" % (z.real, z.imag))
+        return "Statevector([" + ", ".join(f(a) for a in self.data) + "])"
+
+
+def plot_histogram(counts, *args, **kwargs):
+    if isinstance(counts, list): counts = counts[0]
+    total = sum(counts.values()) or 1
+    width = max(len(k) for k in counts) if counts else 0
+    for k in sorted(counts):
+        v = counts[k]; bar = "█" * max(1, round(30 * v / total)) if v else ""
+        print("%s │%s %d (%.1f%%)" % (k.rjust(width), bar, v, 100 * v / total))
+
+
+def _export():
+    qc = _last["circuit"] or (_registry[-1] if _registry else None)
+    if qc is None: return {"ok": False}
+    ops = [[n, list(q)] for n, q, p in qc.data if n not in ("measure", "barrier")]
+    return {"ok": True, "n": qc.num_qubits, "ops": ops,
+            "counts": _last["counts"] if _last["circuit"] is qc else None,
+            "shots": _last["shots"]}
+
+
+def _reset():
+    _registry.clear(); _last.update({"counts": None, "shots": 0, "circuit": None})
+</script>
+<script>
+(function(){
+  var nq=2, cols=[], tool='h', pending=null, noiseOn=true, measured=null, isGrover=false;
+  var groups=null, tourSteps=[], tourIdx=0, playing=null, hlA=-1, hlB=-1, lastPlaced=null, shown=null, animId=0;
+  var target='11', iters=1, step=-1, hlCol=-1, shots=1024, fmt='qk', typing=false, view='bars', yaw=0.6, pitch=0.45;
+  var pasteEl=document.getElementById('paste'), loadMsg=document.getElementById('loadmsg'), timer=null;
+
+  var SINGLE=['h','x','y','z','s','sdg','t','tdg'];
+  var MULTI={cx:2,cz:2,swap:2,ccx:3,ccz:3};
+  var GLABEL={h:'H',x:'X',y:'Y',z:'Z',s:'S',sdg:'S†',t:'T',tdg:'T†'};
+  var GCLASS={h:'h',x:'x',y:'x',z:'z',s:'ph',sdg:'ph',t:'ph',tdg:'ph'};
+
+  function lbl(i,n){ var s=i.toString(2); while(s.length<(n||nq)) s='0'+s; return s; }
+  function emptyCol(){ var s=[]; for(var i=0;i<nq;i++) s.push(null); return {s:s,m:null}; }
+  function isEmpty(c){ return !c.m && c.s.every(function(g){return !g;}); }
+  function normalize(){
+    var last=-1; cols.forEach(function(c,i){ if(!isEmpty(c)) last=i; });
+    cols=cols.slice(0,last+1);
+    var want=Math.max(12,last+1+4);
+    while(cols.length<want) cols.push(emptyCol());
+  }
+
+  /* ---------- simulador de vector de estado (complejo, n ≤ 3; índice: bit q = qubit q) ---------- */
+  var R2=Math.SQRT1_2;
+  var MAT={ h:[R2,0,R2,0,R2,0,-R2,0], x:[0,0,1,0,1,0,0,0], y:[0,0,0,-1,0,1,0,0], z:[1,0,0,0,0,0,-1,0],
+    s:[1,0,0,0,0,0,0,1], sdg:[1,0,0,0,0,0,0,-1], t:[1,0,0,0,0,0,R2,R2], tdg:[1,0,0,0,0,0,R2,-R2] };
+  function state(cs){
+    var N=1<<nq, re=[], im=[];
+    for(var k=0;k<N;k++){ re.push(0); im.push(0); } re[0]=1;
+    function sw(a,b){ var t=re[a]; re[a]=re[b]; re[b]=t; t=im[a]; im[a]=im[b]; im[b]=t; }
+    cs.forEach(function(col){
+      if(col.m){
+        var g=col.m.g, q=col.m.qs;
+        for(var i=0;i<N;i++){
+          var b0=(i>>q[0])&1, b1=(i>>q[1])&1, b2=q.length>2?(i>>q[2])&1:0;
+          if(g==='cz'){ if(b0&&b1){ re[i]=-re[i]; im[i]=-im[i]; } }
+          else if(g==='ccz'){ if(b0&&b1&&b2){ re[i]=-re[i]; im[i]=-im[i]; } }
+          else if(g==='cx'){ if(b0&&!b1) sw(i,i|(1<<q[1])); }
+          else if(g==='ccx'){ if(b0&&b1&&!b2) sw(i,i|(1<<q[2])); }
+          else if(g==='swap'){ if(b0&&!b1) sw(i,(i&~(1<<q[0]))|(1<<q[1])); }
+        }
+      } else {
+        for(var qq=0;qq<nq;qq++){
+          var M=MAT[col.s[qq]]; if(!M) continue;
+          for(var a=0;a<N;a++){
+            if(((a>>qq)&1)===0){
+              var j=a|(1<<qq), xr=re[a], xi=im[a], yr=re[j], yi=im[j];
+              re[a]=M[0]*xr-M[1]*xi+M[2]*yr-M[3]*yi; im[a]=M[0]*xi+M[1]*xr+M[2]*yi+M[3]*yr;
+              re[j]=M[4]*xr-M[5]*xi+M[6]*yr-M[7]*yi; im[j]=M[4]*xi+M[5]*xr+M[6]*yi+M[7]*yr;
+            }
+          }
+        }
+      }
+    });
+    return {re:re,im:im};
+  }
+  function probsOf(st){ return st.re.map(function(r,i){ return r*r+st.im[i]*st.im[i]; }); }
+  function arity(k){ return cols.filter(function(c){ return c.m && MULTI[c.m.g]===k; }).length; }
+  function noisy(p){
+    var e=Math.min(0.5,0.05*arity(2)+0.1*arity(3)), N=p.length, f=0.02, out=[];
+    var q=p.map(function(v){ return (1-e)*v+e/N; });
+    for(var j=0;j<N;j++){ out.push(0); }
+    for(var i=0;i<N;i++) for(var jj=0;jj<N;jj++){
+      var pr=1; for(var b=0;b<nq;b++) pr*=(((i>>b)&1)===((jj>>b)&1))?(1-f):f;
+      out[jj]+=q[i]*pr;
+    }
+    return out;
+  }
+  function sample(p,n){
+    var counts=p.map(function(){return 0;});
+    for(var k=0;k<n;k++){ var u=Math.random(), s=0; for(var i=0;i<p.length;i++){ s+=p[i]; if(u<s||i===p.length-1){ counts[i]++; break; } } }
+    return counts;
+  }
+
+  /* ---------- Grover ---------- */
+  function optimal(n){ var th=Math.asin(1/Math.sqrt(1<<n)); return Math.max(1,Math.round(Math.PI/(4*th)-0.5)); }
+  function theoryP(n,k){ var th=Math.asin(1/Math.sqrt(1<<n)); var v=Math.sin((2*k+1)*th); return v*v; }
+  function allCol(g){ var c=emptyCol(); for(var q=0;q<nq;q++) c.s[q]=g; return c; }
+  function mczCol(){ var c=emptyCol(); c.m=nq===2?{g:'cz',qs:[0,1]}:{g:'ccz',qs:[0,1,2]}; return c; }
+  function xZeros(){ var c=emptyCol(), any=false; for(var q=0;q<nq;q++){ if(target.charAt(nq-1-q)==='0'){ c.s[q]='x'; any=true; } } return any?c:null; }
+  function loadGrover(){
+    cols=[allCol('h')]; groups=[{kind:'sup',end:0}];
+    for(var k=0;k<iters;k++){
+      var xz=xZeros(); if(xz) cols.push(xz);
+      cols.push(mczCol()); if(xz) cols.push(xZeros());
+      groups.push({kind:'ora',it:k+1,end:cols.length-1});
+      cols.push(allCol('h'),allCol('x'),mczCol(),allCol('x'),allCol('h'));
+      groups.push({kind:'dif',it:k+1,end:cols.length-1});
+    }
+    stopPlay(); measured=null; pending=null; changed(true); setTour(0);
+  }
+  function fmtPct(p){ return (p*100).toFixed(1).replace('.',',').replace(',0','')+' %'; }
+  var GEXPL={h:'H pone el qubit en superposición.',x:'X invierte 0 y 1.',y:'Y invierte 0 y 1 y además cambia la fase.',z:'Z cambia la fase de |1⟩ sin tocar las probabilidades.',
+    s:'S gira la fase de |1⟩ un cuarto de vuelta (π/2).',sdg:'S† gira la fase de |1⟩ π/2 hacia el otro lado.',t:'T gira la fase de |1⟩ un octavo de vuelta (π/4).',tdg:'T† gira la fase de |1⟩ π/4 hacia el otro lado.',
+    cx:'CX invierte el objetivo solo si el control vale 1. Así se enlazan los qubits.',cz:'CZ cambia el signo cuando los dos qubits valen 1.',swap:'SWAP intercambia los dos qubits.',
+    ccx:'Toffoli invierte el objetivo si los dos controles valen 1.',ccz:'CCZ cambia el signo cuando los tres qubits valen 1.'};
+  function buildTour(){
+    var N=1<<nq, T=[];
+    T.push({lab:'Inicio',kick:'Paso 0',title:'Todas las cajas cerradas',text:'Los '+nq+' qubits empiezan en 0, así que el estado es '+lbl(0)+'. Todavía no buscamos nada.',look:'100 % en '+lbl(0)+'.',k:0,a:-1,b:-1,view:'bars'});
+    if(isGrover&&groups){
+      var prev=-1, opt=optimal(nq), n=0;
+      groups.forEach(function(g){
+        var a=prev+1, b=g.end, k=g.end+1, it=iters>1&&g.it?' · vuelta '+g.it+' de '+iters:''; prev=g.end; n++;
+        if(g.kind==='sup') T.push({lab:'Superposición',kick:'Paso '+n,title:'Abrimos todas las cajas a la vez',text:'Una H en cada qubit los pone en superposición. Las '+N+' cajas quedan con la misma probabilidad.',look:'Todas las barras iguales: '+fmtPct(1/N)+' cada una.',k:k,a:a,b:b,view:'bars'});
+        else if(g.kind==='ora') T.push({lab:'Oráculo'+(iters>1?' '+g.it:''),kick:'Paso '+n+it,title:'El oráculo marca el tesoro',text:'No dice dónde está el tesoro: solo le cambia el signo a la amplitud de '+target+'. Por eso las probabilidades no se mueven.',look:'En el Vector, la barra de '+target+' cambia de color: ahora tiene fase π.',k:k,a:a,b:b,view:'sv'});
+        else T.push({lab:'Difusión'+(iters>1?' '+g.it:''),kick:'Paso '+n+it,title:g.it>opt?'La difusión se pasa de largo':'La difusión amplifica la caja marcada',text:'Refleja todas las amplitudes alrededor del promedio: la marcada crece y las demás se encogen.'+(g.it>opt?' Ya pasamos el óptimo ('+opt+'), así que esta vuelta la hace bajar.':''),look:target+' queda con '+fmtPct(theoryP(nq,g.it))+'.',k:k,a:a,b:b,view:'bars'});
+      });
+    } else {
+      steps().forEach(function(ci,j){
+        var col=cols[ci], gs=col.m?[col.m.g]:col.s.filter(function(g,i,arr){ return g&&arr.indexOf(g)===i; });
+        var ph=gs.some(function(g){ return 'z s sdg t tdg cz ccz'.indexOf(g)>=0; });
+        T.push({lab:'Paso '+(j+1),kick:'Paso '+(j+1),title:describe(col),text:gs.map(function(g){ return GEXPL[g]; }).join(' '),look:ph?'La fase cambia en el Vector y en el Q-sphere; las barras quizá no.':'Mira cómo cambian las barras y el Q-sphere.',k:j+1,a:ci,b:ci,view:ph?'sv':'bars'});
+      });
+    }
+    T.push({lab:'Medir',kick:'Último paso',title:'Medimos '+shots+' veces',text:'Cada medición abre una sola caja. Con ruido de chip el resultado se parece al de un procesador real: con 2 qubits, el mío dio 89,9 % en 11.',look:'Debajo de cada barra está lo medido y lo ideal.',measure:true,view:'bars'});
+    tourSteps=T;
+  }
+  var tstepsEl=document.getElementById('tsteps'), tbody=document.getElementById('tbody');
+  function paintTour(){
+    tstepsEl.innerHTML='';
+    tourSteps.forEach(function(st,j){
+      var b=document.createElement('button'); b.type='button'; b.innerHTML='<i></i>'+st.lab;
+      if(j<tourIdx) b.className='done';
+      if(j===tourIdx) b.setAttribute('aria-current','step');
+      b.addEventListener('click',function(){ stopPlay(); setTour(j); });
+      tstepsEl.appendChild(b);
+    });
+    var cur=tstepsEl.children[tourIdx]; if(cur&&cur.scrollIntoView) try{ tstepsEl.scrollLeft=cur.offsetLeft-tstepsEl.clientWidth/2+cur.clientWidth/2; }catch(e){}
+    var s=tourSteps[tourIdx];
+    if(!s){
+      document.getElementById('tkick').textContent='Exploración libre';
+      document.getElementById('ttitle').textContent='Mueve el Inspect o toca el circuito';
+      document.getElementById('ttext').textContent='Pulsa Siguiente para volver al recorrido paso a paso.';
+      document.getElementById('tlookw').hidden=true;
+    } else {
+      document.getElementById('tkick').textContent=s.kick;
+      document.getElementById('ttitle').textContent=s.title;
+      document.getElementById('ttext').textContent=s.text;
+      document.getElementById('tlook').textContent=s.look; document.getElementById('tlookw').hidden=false;
+    }
+    tbody.classList.remove('in'); void tbody.offsetWidth; tbody.classList.add('in');
+    document.getElementById('tprev').disabled=tourIdx<=0;
+    document.getElementById('tnext').textContent=tourIdx>=tourSteps.length-1?'Empezar de nuevo':'Siguiente';
+  }
+  function setTour(i){
+    i=Math.max(0,Math.min(tourSteps.length-1,i)); tourIdx=i; var s=tourSteps[i];
+    if(s.measure){ step=-1; hlA=hlB=-1; view='bars'; doMeasure(true); }
+    else { step=s.k; hlA=s.a; hlB=s.b; measured=null; view=s.view; }
+    drawGrid(); updateStepUI(); render(); paintTour();
+  }
+  function stopPlay(){ if(playing){ clearInterval(playing); playing=null; } var b=document.getElementById('tplay'); b.textContent='Reproducir'; b.setAttribute('aria-pressed','false'); }
+  document.getElementById('tprev').addEventListener('click',function(){ stopPlay(); setTour(tourIdx-1); });
+  document.getElementById('tnext').addEventListener('click',function(){ stopPlay(); setTour(tourIdx>=tourSteps.length-1||tourIdx<0?0:tourIdx+1); });
+  document.getElementById('tplay').addEventListener('click',function(){
+    if(playing){ stopPlay(); return; }
+    var b=this; b.textContent='Pausar'; b.setAttribute('aria-pressed','true');
+    if(tourIdx<0||tourIdx>=tourSteps.length-1) setTour(0);
+    playing=setInterval(function(){ if(tourIdx>=tourSteps.length-1){ stopPlay(); return; } setTour(tourIdx+1); },2800);
+  });
+  var qsel=document.getElementById('qsel'), boxesEl=document.getElementById('boxes'), itersEl=document.getElementById('iters');
+  Array.prototype.forEach.call(qsel.children,function(b){
+    b.addEventListener('click',function(){
+      var n=+b.dataset.n; if(n===nq&&isGrover) return;
+      nq=n; target=''; for(var i=0;i<nq;i++) target+='1'; iters=optimal(nq);
+      if(MULTI[tool]>nq) tool='h';
+      buildProblem(); loadGrover();
+    });
+  });
+  function buildProblem(){
+    boxesEl.innerHTML='';
+    for(var i=0;i<(1<<nq);i++){
+      var b=document.createElement('button'); b.type='button'; b.textContent=lbl(i); b.dataset.box=lbl(i);
+      b.setAttribute('aria-label','Tesoro en la caja '+lbl(i));
+      b.addEventListener('click',function(){ target=this.dataset.box; loadGrover(); });
+      boxesEl.appendChild(b);
+    }
+    itersEl.innerHTML='';
+    for(var k=1;k<=3;k++){
+      var e=document.createElement('button'); e.type='button'; e.textContent=k; e.dataset.k=k;
+      if(k===optimal(nq)) e.className='best';
+      e.setAttribute('aria-label',k+' iteraci'+(k>1?'ones':'ón')+(k===optimal(nq)?', óptimo':''));
+      e.addEventListener('click',function(){ iters=+this.dataset.k; loadGrover(); });
+      itersEl.appendChild(e);
+    }
+  }
+  function paintProblem(){
+    Array.prototype.forEach.call(qsel.children,function(b){ b.setAttribute('aria-pressed',+b.dataset.n===nq?'true':'false'); });
+    Array.prototype.forEach.call(boxesEl.children,function(b){ b.setAttribute('aria-pressed',isGrover&&b.dataset.box===target?'true':'false'); });
+    Array.prototype.forEach.call(itersEl.children,function(b){ b.setAttribute('aria-pressed',isGrover&&+b.dataset.k===iters?'true':'false'); });
+    var th=document.getElementById('theory'), N=1<<nq, opt=optimal(nq);
+    if(!isGrover){ th.textContent='Cambiaste el circuito a mano. Toca una caja para volver a cargar Grover.'; return; }
+    var p=theoryP(nq,iters)*100;
+    th.innerHTML='Con '+N+' cajas y '+iters+' iteraci'+(iters>1?'ones':'ón')+', la teoría da <b>'+p.toFixed(1).replace('.',',')+' %</b> en la caja <b>'+target+'</b>. '+
+      (iters===opt?'Es el número óptimo de iteraciones.':iters>opt?'Te pasaste: lo óptimo es '+opt+', y la probabilidad vuelve a bajar.':'Lo óptimo es '+opt+'.');
+  }
+
+  /* ---------- paleta ---------- */
+  var TOOLS=[['h','H','Hadamard','h'],['x','X','NOT','x'],['y','Y','Pauli Y','x'],['z','Z','fase π','z'],['s','S','fase π/2','ph'],['sdg','S†','−π/2','ph'],['t','T','fase π/4','ph'],['tdg','T†','−π/4','ph'],
+    ['cx','CX','control','c'],['cz','CZ','oráculo','c'],['swap','SWAP','intercambio','c'],['ccx','CCX','Toffoli','c'],['ccz','CCZ','oráculo 3','c'],['erase','×','borrar','e']];
+  var pal=document.getElementById('palette');
+  TOOLS.forEach(function(t){
+    var b=document.createElement('button'); b.type='button'; b.className='tool'; b.dataset.tool=t[0];
+    var sw=t[3]==='c'?'':t[1];
+    b.innerHTML='<span class="sw '+t[3]+'">'+sw+'</span><span>'+(t[3]==='c'?t[1]:'')+'</span><small>'+t[2]+'</small>';
+    b.setAttribute('aria-label',t[1]+', '+t[2]);
+    b.addEventListener('click',function(){ tool=t[0]; pending=null; paintTools(); drawGrid(); updateHint(); });
+    pal.appendChild(b);
+  });
+  function paintTools(){
+    Array.prototype.forEach.call(pal.children,function(b){
+      var t=b.dataset.tool; b.disabled=!!(MULTI[t]&&MULTI[t]>nq);
+      b.setAttribute('aria-pressed',t===tool?'true':'false');
+    });
+  }
+  var hintEl=document.getElementById('canhint');
+  function updateHint(){
+    var a=MULTI[tool];
+    if(pending){
+      var n=pending.qs.length, txt;
+      if(tool==='cx') txt='Ahora toca el qubit objetivo (⊕) en la misma columna.';
+      else if(tool==='ccx') txt=n===1?'Ahora toca el segundo control en la misma columna.':'Ahora toca el qubit objetivo (⊕).';
+      else txt='Ahora toca '+(a-n===1?'el otro qubit':'otro qubit')+' en la misma columna.';
+      hintEl.textContent=txt; hintEl.className='hint act';
+    } else if(a){
+      hintEl.textContent=tool==='cx'||tool==='ccx'?'Toca primero el control y después el objetivo, en la misma columna.':'Toca cada qubit de la puerta, en la misma columna.';
+      hintEl.className='hint act';
+    } else {
+      hintEl.textContent=tool==='erase'?'Toca una puerta para quitarla.':'Toca un espacio del cable para poner '+(GLABEL[tool]||tool.toUpperCase())+'. Tócala otra vez para quitarla.';
+      hintEl.className='hint';
+    }
+  }
+
+  /* ---------- circuito ---------- */
+  var grid=document.getElementById('grid');
+  function steps(){ var a=[]; cols.forEach(function(c,i){ if(!isEmpty(c)) a.push(i); }); return a; }
+  function stepState(){ var st=steps(), N=st.length; if(step<0||step>N) step=N; return {st:st,N:N,k:step}; }
+  function partial(){ var s=stepState(); return s.k===0?[]:cols.slice(0,s.st[s.k-1]+1); }
+  function describe(col){
+    if(col.m){ var q=col.m.qs, g=col.m.g;
+      if(g==='cx') return 'CX, control q'+q[0]+' y objetivo q'+q[1];
+      if(g==='ccx') return 'CCX, controles q'+q[0]+' y q'+q[1]+', objetivo q'+q[2];
+      return g.toUpperCase()+' en '+q.map(function(x){return 'q'+x;}).join(', ');
+    }
+    var by={}; col.s.forEach(function(g,q){ if(g){ (by[g]=by[g]||[]).push('q'+q); } });
+    return Object.keys(by).map(function(g){ return GLABEL[g]+' en '+by[g].join(', '); }).join('; ');
+  }
+  function updateStepUI(){
+    var s=stepState(), r=document.getElementById('step'), t=document.getElementById('steptxt');
+    r.max=s.N; r.value=s.k; r.disabled=(s.N===0);
+    if(s.N===0) t.textContent='Agrega puertas para poder inspeccionar.';
+    else if(s.k===s.N) t.textContent='Circuito completo, '+s.N+' paso'+(s.N>1?'s':'')+'. Mueve el control hacia atrás para ver cada paso.';
+    else if(s.k===0) t.textContent='Inicio: todo en la caja '+lbl(0)+'.';
+    else t.textContent='Paso '+s.k+' de '+s.N+': '+describe(cols[s.st[s.k-1]])+'.';
+  }
+  function drawGrid(){
+    var ss=stepState(), A=hlA, B=hlB;
+    if(A<0&&ss.k>0&&ss.k<ss.N){ A=B=ss.st[ss.k-1]; }
+    var fresh=lastPlaced&&Date.now()-lastPlaced.t<600;
+    grid.style.gridTemplateColumns='30px repeat('+cols.length+', 50px)';
+    grid.innerHTML='';
+    for(var q=0;q<nq;q++){
+      var lab=document.createElement('div'); lab.className='qlabel'; lab.textContent='q'+q; lab.style.gridRow=(q+1); lab.style.gridColumn=1; grid.appendChild(lab);
+      for(var c=0;c<cols.length;c++){
+        var col=cols[c], b=document.createElement('button'), cls='cell'+(A>=0&&c>=A&&c<=B?' hl':'')+(fresh&&lastPlaced.c===c&&lastPlaced.qs.indexOf(q)>=0?' new':''), html='', label='q'+q+', columna '+(c+1);
+        b.type='button'; b.style.gridRow=(q+1); b.style.gridColumn=(c+2);
+        if(col.m){
+          var qs=col.m.qs, lo=Math.min.apply(null,qs), hi=Math.max.apply(null,qs), idx=qs.indexOf(q), g=col.m.g;
+          if(q>=lo&&q<hi) cls+=' top';
+          if(idx>=0){
+            if(g==='swap'){ html='<span class="swp">×</span>'; }
+            else if((g==='cx'||g==='ccx')&&idx===qs.length-1){ html='<span class="tgt">+</span>'; }
+            else html='<span class="dot"></span>';
+            label+=', '+g.toUpperCase();
+          }
+        } else if(col.s[q]){
+          var g1=col.s[q]; html='<span class="g '+GCLASS[g1]+'">'+GLABEL[g1]+'</span>'; label+=', '+GLABEL[g1];
+        } else { cls+=' empty'; label+=', vacío'; }
+        if(pending&&pending.col===c&&pending.qs.indexOf(q)>=0){ cls+=' pend'; html='<span class="dot"></span>'; }
+        b.className=cls; b.innerHTML=html; b.setAttribute('aria-label',label);
+        (function(cc,qq){ b.addEventListener('click',function(){ place(cc,qq); }); })(c,q);
+        grid.appendChild(b);
+      }
+    }
+  }
+  function place(c,q){
+    var col=cols[c], a=MULTI[tool]; stopPlay();
+    try{ if(navigator.vibrate) navigator.vibrate(8); }catch(e){}
+    if(tool==='erase'){
+      if(col.m){ var lo=Math.min.apply(null,col.m.qs), hi=Math.max.apply(null,col.m.qs); if(q>=lo&&q<=hi) col.m=null; }
+      else col.s[q]=null;
+      pending=null;
+    } else if(a){
+      if(a>nq) return;
+      if(!pending||pending.col!==c){ pending={col:c,qs:[q]}; }
+      else if(pending.qs.indexOf(q)>=0){ pending=null; }
+      else {
+        pending.qs.push(q);
+        if(pending.qs.length===a){ col.m={g:tool,qs:pending.qs.slice()}; for(var i=0;i<nq;i++) col.s[i]=null; lastPlaced={c:c,qs:pending.qs.slice(),t:Date.now()}; pending=null; }
+      }
+      if(pending){ drawGrid(); updateHint(); return; }
+    } else {
+      if(col.m) col.m=null;
+      col.s[q]=(col.s[q]===tool)?null:tool; pending=null;
+      if(col.s[q]) lastPlaced={c:c,qs:[q],t:Date.now()};
+    }
+    measured=null; changed(false);
+  }
+
+  /* ---------- geometría 3D ---------- */
+  function proj(x,y,z,cx,cy,R){
+    var cyw=Math.cos(yaw), syw=Math.sin(yaw), cp=Math.cos(pitch), sp=Math.sin(pitch);
+    var x1=x*cyw-y*syw, y1=x*syw+y*cyw;
+    return [cx+x1*R, cy-(z*cp-y1*sp)*R, z*sp+y1*cp];
+  }
+  function ring(plane,cx,cy,R){
+    var pts=[], n=72;
+    for(var i=0;i<=n;i++){
+      var t=i/n*2*Math.PI, c=Math.cos(t), s=Math.sin(t), p;
+      if(plane==='xy') p=proj(c,s,0,cx,cy,R); else if(plane==='xz') p=proj(c,0,s,cx,cy,R); else p=proj(0,c,s,cx,cy,R);
+      pts.push((i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1));
+    }
+    return '<path class="sl" d="'+pts.join(' ')+'"/>';
+  }
+  function sphereBase(cx,cy,R){ return '<circle class="sl" cx="'+cx+'" cy="'+cy+'" r="'+R+'"/>'+ring('xy',cx,cy,R)+ring('xz',cx,cy,R)+ring('yz',cx,cy,R); }
+  function phaseColor(ph){ var d=ph*180/Math.PI; return 'hsl('+(((210+d)%360+360)%360).toFixed(0)+',72%,52%)'; }
+  function wheel(){
+    var marks=[[0,'0'],[Math.PI/2,'π/2'],[Math.PI,'π'],[3*Math.PI/2,'3π/2']];
+    return '<div class="legend"><span>fase:</span>'+marks.map(function(m){ return '<span><i style="background:'+phaseColor(m[0])+'"></i>'+m[1]+'</span>'; }).join('')+'</div>';
+  }
+
+  function qsphere(st){
+    var cx=160, cy=170, R=115, N=1<<nq, byW={}, items=[];
+    for(var i=0;i<N;i++){ var w=lbl(i).split('').filter(function(ch){return ch==='1';}).length; (byW[w]=byW[w]||[]).push(i); }
+    Object.keys(byW).forEach(function(w){
+      var list=byW[w], th=Math.PI*(+w)/nq;
+      list.forEach(function(i,k){
+        var phi=2*Math.PI*k/list.length, pos=[Math.sin(th)*Math.cos(phi),Math.sin(th)*Math.sin(phi),Math.cos(th)];
+        var s=proj(pos[0],pos[1],pos[2],cx,cy,R), p=st.re[i]*st.re[i]+st.im[i]*st.im[i];
+        items.push({i:i,pos:pos,s:s,p:p,ph:Math.atan2(st.im[i],st.re[i])});
+      });
+    });
+    items.sort(function(a,b){ return a.s[2]-b.s[2]; });
+    var out='<svg class="sph" viewBox="0 0 320 340" role="img" aria-label="Q-sphere de '+nq+' qubits">'+sphereBase(cx,cy,R);
+    items.forEach(function(it){
+      var x=it.s[0], y=it.s[1], on=it.p>0.0005, rad=on?(4+16*Math.sqrt(it.p)):3.5, col=phaseColor(it.ph);
+      var vx=x-cx, vy=y-cy, len=Math.sqrt(vx*vx+vy*vy);
+      if(len<6){ vx=0; vy=(it.pos[2]>=0?-1:1); len=1; }
+      var lx=x+vx/len*(rad+13), ly=y+vy/len*(rad+13)+4;
+      if(on) out+='<line x1="'+cx+'" y1="'+cy+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="'+col+'" stroke-width="2" opacity=".85"/>';
+      out+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+rad.toFixed(1)+'" '+(on?'fill="'+col+'"':'fill="none" stroke="var(--muted)" stroke-width="1.2"')+' opacity="'+(it.s[2]<-0.2?0.65:1)+'"/>';
+      out+='<text class="'+(on?'st':'stm')+'" x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle">'+lbl(it.i)+'</text>';
+    });
+    out+='<circle cx="'+cx+'" cy="'+cy+'" r="2.5" fill="var(--muted)"/></svg>'+wheel();
+    out+='<div class="legend"><span>tamaño = probabilidad</span><span>arrastra para girar</span></div>';
+    return out;
+  }
+
+  function reduced(st,q){
+    var a=0,b=0,rr=0,ri=0,N=st.re.length;
+    for(var i=0;i<N;i++){
+      var p=st.re[i]*st.re[i]+st.im[i]*st.im[i];
+      if(((i>>q)&1)===0){
+        a+=p; var j=i|(1<<q);
+        rr+=st.re[i]*st.re[j]+st.im[i]*st.im[j];
+        ri+=st.im[i]*st.re[j]-st.re[i]*st.im[j];
+      } else b+=p;
+    }
+    return {a:a,b:b,x:2*rr,y:-2*ri,z:a-b,coh:Math.sqrt(rr*rr+ri*ri),ph:Math.atan2(-ri,rr),pur:a*a+b*b+2*(rr*rr+ri*ri)};
+  }
+  function layout(){ var W=nq===2?320:360, cell=W/nq; return {W:W,cell:cell,R:Math.min(62,cell/2-20)}; }
+  function bloch(st){
+    var L=layout(), H=L.R*2+90, out='<svg class="sph" viewBox="0 0 '+L.W+' '+H+'" role="img" aria-label="Esferas de Bloch">', lens=[];
+    for(var q=0;q<nq;q++){
+      var cx=L.cell*(q+0.5), cy=L.R+26, R=L.R, r=reduced(st,q);
+      out+=sphereBase(cx,cy,R);
+      [[0,0,1,'|0⟩'],[0,0,-1,'|1⟩'],[1,0,0,'x'],[0,1,0,'y']].forEach(function(v){
+        var p=proj(v[0],v[1],v[2],cx,cy,R);
+        out+='<line class="sa" x1="'+cx+'" y1="'+cy+'" x2="'+p[0].toFixed(1)+'" y2="'+p[1].toFixed(1)+'"/>';
+        var dx=p[0]-cx, dy=p[1]-cy, l=Math.sqrt(dx*dx+dy*dy)||1;
+        out+='<text class="stm" x="'+(p[0]+dx/l*12).toFixed(1)+'" y="'+(p[1]+dy/l*12+4).toFixed(1)+'" text-anchor="middle">'+v[3]+'</text>';
+      });
+      var t=proj(r.x,r.y,r.z,cx,cy,R);
+      out+='<line x1="'+cx+'" y1="'+cy+'" x2="'+t[0].toFixed(1)+'" y2="'+t[1].toFixed(1)+'" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>';
+      out+='<circle cx="'+t[0].toFixed(1)+'" cy="'+t[1].toFixed(1)+'" r="5.5" fill="var(--accent)"/>';
+      out+='<text class="st" x="'+cx+'" y="'+(cy+R+36)+'" text-anchor="middle">q'+q+'</text>';
+      lens.push(Math.sqrt(r.x*r.x+r.y*r.y+r.z*r.z));
+    }
+    out+='</svg>';
+    var ent=lens.some(function(l){ return l<0.98; });
+    out+='<p class="small">Largo del vector: '+lens.map(function(l,q){ return 'q'+q+' = '+l.toFixed(2).replace('.',','); }).join(', ')+'. '+(ent?'Menor que 1: ese qubit está enlazado con los otros y, por separado, queda en estado mezclado.':'Todos en 1: cada qubit tiene su propio estado, sin enlace.')+'</p>';
+    return out;
+  }
+  function phasedisk(st){
+    var L=layout(), R=Math.min(54,L.R), H=R*2+70, out='<svg class="flat" viewBox="0 0 '+L.W+' '+H+'" role="img" aria-label="Discos de fase">';
+    for(var q=0;q<nq;q++){
+      var cx=L.cell*(q+0.5), cy=R+8, r=reduced(st,q), p1=r.b, top=cy+R-2*R*p1;
+      out+='<defs><clipPath id="pc'+q+'"><circle cx="'+cx+'" cy="'+cy+'" r="'+R+'"/></clipPath></defs>';
+      out+='<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="var(--panel2)" stroke="var(--line)" stroke-width="1.5"/>';
+      if(p1>0.0005) out+='<rect x="'+(cx-R)+'" y="'+top.toFixed(1)+'" width="'+(2*R)+'" height="'+(2*R*p1).toFixed(1)+'" fill="var(--ph0)" opacity=".8" clip-path="url(#pc'+q+')"/>';
+      var rr=R*Math.max(0,2*r.pur-1);
+      if(rr>2) out+='<circle cx="'+cx+'" cy="'+cy+'" r="'+rr.toFixed(1)+'" fill="none" stroke="var(--fg)" stroke-width="1.5" stroke-dasharray="4 3"/>';
+      if(r.coh>0.001) out+='<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+R*Math.cos(r.ph)).toFixed(1)+'" y2="'+(cy-R*Math.sin(r.ph)).toFixed(1)+'" stroke="var(--fg)" stroke-width="2.5" stroke-linecap="round"/>';
+      out+='<text class="st" x="'+cx+'" y="'+(cy+R+22)+'" text-anchor="middle">q'+q+' · |1⟩ '+Math.round(p1*100)+' %</text>';
+      out+='<text class="stm" x="'+cx+'" y="'+(cy+R+38)+'" text-anchor="middle">pureza '+r.pur.toFixed(2).replace('.',',')+'</text>';
+    }
+    out+='</svg><div class="legend"><span><i style="background:var(--ph0)"></i>azul = prob. de |1⟩</span><span>línea = fase local (0 a la derecha)</span><span>anillo = pureza</span></div>';
+    return out;
+  }
+  function fmtC(r,i){
+    function f(v){ return Math.abs(v).toFixed(3); }
+    if(Math.abs(i)<5e-4) return (r<0?'−':'+')+f(r);
+    if(Math.abs(r)<5e-4) return (i<0?'−':'+')+f(i)+'i';
+    return (r<0?'−':'')+f(r)+(i<0?'−':'+')+f(i)+'i';
+  }
+  function statevector(st){
+    var out='<div class="bars">';
+    for(var i=0;i<st.re.length;i++){
+      var m=Math.sqrt(st.re[i]*st.re[i]+st.im[i]*st.im[i]), on=m>0.0005, col=phaseColor(Math.atan2(st.im[i],st.re[i]));
+      out+='<div class="row"><div class="b">'+lbl(i)+'</div><div class="track"><div class="fill" style="width:'+(m*100).toFixed(1)+'%;background:'+col+';opacity:'+(on?1:0)+'"></div></div><div class="v">'+(on?fmtC(st.re[i],st.im[i]):'0')+'</div></div>';
+    }
+    return out+'</div>'+wheel()+'<div class="legend"><span>largo = magnitud de la amplitud</span></div>';
+  }
+  function probBars(P){
+    var ideal=P, out='<div class="bars">';
+    for(var i=0;i<P.length;i++){
+      var pct=measured?measured.counts[i]/measured.shots:P[i];
+      out+='<div class="row"><div class="b">'+lbl(i)+'</div><div class="track"><div class="fill" style="width:'+(pct*100).toFixed(1)+'%"></div></div><div class="v">'+(pct*100).toFixed(1)+' %</div>';
+      if(measured) out+='<div class="m">'+measured.counts[i]+' de '+measured.shots+' · ideal '+(ideal[i]*100).toFixed(1)+' %</div>';
+      out+='</div>';
+    }
+    return out+'</div>';
+  }
+  function renderLive(vals){
+    var el=document.getElementById('lvh'), top=document.getElementById('lvtop'), N=vals.length;
+    el.style.setProperty('--n',N);
+    if(el.children.length!==N){
+      el.innerHTML='';
+      for(var i=0;i<N;i++){ var d=document.createElement('div'); d.className='lvc'; d.innerHTML='<span class="lp"></span><div class="vt"><i></i></div><span class="ll">'+lbl(i)+'</span>'; el.appendChild(d); }
+    }
+    var mx=0; vals.forEach(function(v,i){ if(v>vals[mx]) mx=i; });
+    for(var j=0;j<N;j++){
+      var c=el.children[j]; c.className='lvc'+(j===mx?' max':'');
+      c.querySelector('.lp').textContent=Math.round(vals[j]*100);
+      c.querySelector('i').style.height=(vals[j]*100).toFixed(1)+'%';
+    }
+    document.getElementById('lvl').textContent=measured?(measured.py?'Python · '+measured.shots+' shots':'Medido · '+measured.shots+' shots'):'Ideal · en vivo';
+    top.innerHTML='máx. <b>'+lbl(mx)+'</b> '+(vals[mx]*100).toFixed(1).replace('.',',')+' %';
+  }
+
+  var viewEl=document.getElementById('view'), vnote=document.getElementById('vnote');
+  function drawViews(st){
+    var P=probsOf(st), html;
+    if(view==='bars') html=probBars(P);
+    else if(view==='qs') html=qsphere(st);
+    else if(view==='bl') html=bloch(st);
+    else if(view==='ph') html=phasedisk(st);
+    else html=statevector(st);
+    viewEl.innerHTML=html;
+    var svg=viewEl.querySelector('svg.sph'); if(svg) attachDrag(svg);
+    renderLive(measured?measured.counts.map(function(c){ return c/measured.shots; }):P);
+  }
+  function tween(st){
+    var from=shown, reduce=false;
+    try{ reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+    var id=++animId;
+    if(!from||from.re.length!==st.re.length||reduce||measured){ shown=st; drawViews(st); return; }
+    var t0=null, D=520;
+    function frame(now){
+      if(id!==animId) return;
+      if(t0===null) t0=now;
+      var t=Math.min(1,(now-t0)/D), e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+      var cur={re:from.re.map(function(v,i){ return v+(st.re[i]-v)*e; }),im:from.im.map(function(v,i){ return v+(st.im[i]-v)*e; })};
+      shown=cur; drawViews(cur);
+      if(t<1) requestAnimationFrame(frame); else { shown=st; drawViews(st); }
+    }
+    requestAnimationFrame(frame);
+  }
+  function render(){
+    var st=state(partial()), s=stepState(), inspecting=s.k<s.N, note;
+    if(measured&&measured.counts.length!==st.re.length) measured=null;
+    if(view==='bars') note=measured?(measured.py?'Resultado de tu código Python, en el simulador ideal ('+measured.shots+' intentos).':measured.noise?'Medición con ruido de chip (modelo simple): no sale 100 % y cambia cada vez.':'Medición sin ruido: sale lo que predice la teoría, con algo de azar.')
+        :(inspecting?'Probabilidades después del paso que estás viendo.':'Probabilidades en vivo con un simulador ideal, igual que en el Composer.');
+    else if(view==='qs') note='Como el Q-sphere del Composer: '+lbl(0)+' arriba, '+lbl((1<<nq)-1)+' abajo y los estados con igual número de unos en la misma latitud. Arrastra para girar.';
+    else if(view==='bl') note='Una esfera por qubit. El vector apunta al estado del qubit; si se enlaza con otros, se acorta.';
+    else if(view==='ph') note='Un disco por qubit, con la misma información que el Phase disk del Composer.';
+    else note='Amplitudes del estado: el largo es la magnitud y el color es la fase.';
+    vnote.textContent=note;
+    tween(st);
+    var nn=arity(2)+arity(3);
+    document.getElementById('note').textContent=nn===0?'Tu circuito no tiene puertas de varios qubits, así que el ruido casi no cambia nada.':'Tu circuito tiene '+nn+' puerta'+(nn>1?'s':'')+' de varios qubits. Son las más ruidosas en un chip real.';
+    Array.prototype.forEach.call(document.querySelectorAll('#vtabs button'),function(b){ b.setAttribute('aria-pressed',b.dataset.v===view?'true':'false'); });
+  }
+  function attachDrag(svg){
+    var drag=null;
+    svg.addEventListener('pointerdown',function(e){ drag={x:e.clientX,y:e.clientY}; try{ svg.setPointerCapture(e.pointerId); }catch(err){} });
+    svg.addEventListener('pointermove',function(e){
+      if(!drag) return;
+      yaw+=(e.clientX-drag.x)*0.012; pitch=Math.max(-1.45,Math.min(1.45,pitch+(e.clientY-drag.y)*0.012));
+      drag={x:e.clientX,y:e.clientY}; drawViews(shown||state(partial()));
+    });
+    function end(){ drag=null; }
+    svg.addEventListener('pointerup',end); svg.addEventListener('pointercancel',end);
+  }
+
+  /* ---------- código: generar ---------- */
+  function ql(a){ return '['+a.join(', ')+']'; }
+  function gen(){
+    var all=[]; for(var i=0;i<nq;i++) all.push(i);
+    var qk=['from qiskit import QuantumCircuit','from qiskit_aer import AerSimulator','','qc = QuantumCircuit('+nq+', '+nq+')'];
+    var qs=['OPENQASM 2.0;','include "qelib1.inc";','qreg q['+nq+'];','creg c['+nq+'];'];
+    cols.forEach(function(col){
+      if(isEmpty(col)) return;
+      if(col.m){
+        var a=col.m.qs, g=col.m.g, args=a.join(', '), qa=a.map(function(x){return 'q['+x+']';}).join(',');
+        qk.push('qc.'+g+'('+args+')');
+        if(g==='ccz'){ qs.push('h q['+a[2]+'];','ccx '+qa+';','h q['+a[2]+'];'); } else qs.push(g+' '+qa+';');
+        return;
+      }
+      var order=[], by={};
+      col.s.forEach(function(g,q){ if(g){ if(!by[g]){ by[g]=[]; order.push(g); } by[g].push(q); } });
+      order.forEach(function(g){
+        qk.push('qc.'+g+'('+(by[g].length>1?ql(by[g]):by[g][0])+')');
+        by[g].forEach(function(q){ qs.push(g+' q['+q+'];'); });
+      });
+    });
+    qk.push('qc.measure('+ql(all)+', '+ql(all)+')','','result = AerSimulator().run(qc, shots=1024).result()','print(result.get_counts())');
+    all.forEach(function(q){ qs.push('measure q['+q+'] -> c['+q+'];'); });
+    if(!typing) pasteEl.value=(fmt==='qk'?qk:qs).join('\n');
+  }
+
+  /* ---------- código: leer en vivo ---------- */
+  function argList(s){
+    s=s.trim(); var m;
+    if((m=s.match(/^range\(\s*(\d+)\s*\)$/))){ var r=[]; for(var i=0;i<+m[1];i++) r.push(i); return r; }
+    if(/^\[[\d,\s]*\]$/.test(s)) return s.replace(/[\[\]\s]/g,'').split(',').filter(Boolean).map(Number);
+    if(/^\d+$/.test(s)) return [+s];
+    return null;
+  }
+  function parse(text){
+    var ops=[], n=null, lines=text.replace(/\/\/.*$/gm,'').replace(/#.*$/gm,'').split(/[\n;]+/);
+    for(var i=0;i<lines.length;i++){
+      var ln=lines[i].trim(); if(!ln) continue; var m;
+      if((m=ln.match(/QuantumCircuit\(\s*(\d+)/))){ n=+m[1]; continue; }
+      if((m=ln.match(/^qreg\s+\w+\[(\d+)\]$/i))){ n=+m[1]; continue; }
+      if((m=ln.match(/^\w+\.(h|x|y|z|s|sdg|t|tdg)\((.+)\)$/))){
+        var qs=argList(m[2]); if(!qs) return {err:ln};
+        qs.forEach(function(q){ ops.push({g:m[1],qs:[q]}); }); continue;
+      }
+      if((m=ln.match(/^\w+\.(cx|cnot|cz|swap)\(\s*(\d+)\s*,\s*(\d+)\s*\)$/))){ ops.push({g:m[1]==='cnot'?'cx':m[1],qs:[+m[2],+m[3]]}); continue; }
+      if((m=ln.match(/^\w+\.(ccx|toffoli|ccz)\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/))){ ops.push({g:m[1]==='toffoli'?'ccx':m[1],qs:[+m[2],+m[3],+m[4]]}); continue; }
+      if((m=ln.match(/^(h|x|y|z|s|sdg|t|tdg)\s+\w+\[(\d+)\]$/i))){ ops.push({g:m[1].toLowerCase(),qs:[+m[2]]}); continue; }
+      if((m=ln.match(/^(cx|cz|swap)\s+\w+\[(\d+)\]\s*,\s*\w+\[(\d+)\]$/i))){ ops.push({g:m[1].toLowerCase(),qs:[+m[2],+m[3]]}); continue; }
+      if((m=ln.match(/^ccx\s+\w+\[(\d+)\]\s*,\s*\w+\[(\d+)\]\s*,\s*\w+\[(\d+)\]$/i))){ ops.push({g:'ccx',qs:[+m[1],+m[2],+m[3]]}); continue; }
+      if(/^(from|import|print|openqasm|include|creg|barrier|measure|\w+\.(measure|measure_all|barrier)\b|\w+\s*=)/i.test(ln)) continue;
+      return {err:ln};
+    }
+    n=n||nq;
+    if(n<2||n>3) return {err:null,big:n};
+    for(var k=0;k<ops.length;k++){
+      var o=ops[k];
+      if(o.qs.some(function(q){ return q>=n; })) return {err:'qubit fuera de rango'};
+      if(o.qs.length>1&&new Set(o.qs).size!==o.qs.length) return {err:'qubits repetidos'};
+    }
+    return {n:n,ops:ops};
+  }
+  function schedule(ops,n){
+    var saved=nq; nq=n;
+    var cs=[], nxt=[]; for(var i=0;i<n;i++) nxt.push(0);
+    ops.forEach(function(o){
+      if(o.qs.length===1){
+        var q=o.qs[0], c=nxt[q];
+        while(cs.length<=c) cs.push(emptyCol());
+        cs[c].s[q]=o.g; nxt[q]++;
+      } else {
+        var c2=Math.max.apply(null,nxt);
+        while(cs.length<=c2) cs.push(emptyCol());
+        cs[c2].m={g:o.g,qs:o.qs.slice()};
+        for(var k=0;k<n;k++) nxt[k]=c2+1;
+      }
+    });
+    nq=saved;
+    return cs;
+  }
+  function applyParsed(r){ nq=r.n; buildProblem(); cols=schedule(r.ops,r.n); measured=null; pending=null; }
+  pasteEl.addEventListener('input',function(){
+    clearTimeout(timer);
+    timer=setTimeout(function(){
+      var r=parse(pasteEl.value);
+      if(r.big){ loadMsg.className='msg'; loadMsg.textContent='El dibujo es de 2 o 3 qubits. Pulsa Ejecutar Python para correr circuitos más grandes.'; return; }
+      if(r.err!==undefined&&!r.ops){
+        if(fmt==='qk'){ loadMsg.className='msg'; loadMsg.textContent='El dibujo en vivo no lee esta línea. Pulsa Ejecutar Python para correr el código completo.'; }
+        else { loadMsg.className='msg err'; loadMsg.textContent='No entiendo: "'+String(r.err).slice(0,60)+'". Uso h, x, y, z, s, sdg, t, tdg, cx, cz, swap y ccx.'; }
+        return;
+      }
+      applyParsed(r); typing=true; changed(false); typing=false;
+      loadMsg.className='msg ok'; loadMsg.textContent=r.ops.length?'Circuito actualizado: '+r.ops.length+' puerta'+(r.ops.length>1?'s':'')+'.':'Circuito vacío.';
+    },350);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#fmt button'),function(b){
+    b.addEventListener('click',function(){
+      fmt=b.dataset.f;
+      Array.prototype.forEach.call(document.querySelectorAll('#fmt button'),function(x){ x.setAttribute('aria-pressed',x===b?'true':'false'); });
+      loadMsg.textContent=''; document.getElementById('runpy').hidden=(fmt!=='qk'); gen();
+    });
+  });
+  document.getElementById('copy').addEventListener('click',function(){
+    function fb(){ pasteEl.focus(); pasteEl.select(); loadMsg.className='msg'; loadMsg.textContent='Texto seleccionado. Cópialo con tu teclado.'; }
+    try{ navigator.clipboard.writeText(pasteEl.value).then(function(){ loadMsg.className='msg ok'; loadMsg.textContent='Copiado.'; },fb); }catch(e){ fb(); }
+  });
+
+  /* ---------- Python real con Pyodide ---------- */
+  var PY_BASE=window.PYODIDE_BASE||'https://cdn.jsdelivr.net/npm/pyodide@0.26.4/';
+  var pyReady=null, pyOut=document.getElementById('pyout'), runBtn=document.getElementById('runpy');
+  function outLine(t,cls){ var sp=document.createElement('span'); if(cls) sp.className=cls; sp.textContent=t+'\n'; pyOut.appendChild(sp); }
+  function loadPy(){
+    if(pyReady) return pyReady;
+    pyReady=new Promise(function(res,rej){
+      function boot(){
+        loadPyodide({indexURL:PY_BASE}).then(function(py){
+          var src=document.getElementById('qiskit-src').textContent;
+          py.FS.mkdirTree('/lab/qiskit'); py.FS.mkdirTree('/lab/qiskit_aer');
+          py.FS.writeFile('/lab/qiskit/__init__.py',src);
+          py.FS.writeFile('/lab/qiskit/quantum_info.py','from qiskit import Statevector\n');
+          py.FS.writeFile('/lab/qiskit/visualization.py','from qiskit import plot_histogram\n');
+          py.FS.writeFile('/lab/qiskit_aer/__init__.py','from qiskit import AerSimulator, Aer\n');
+          py.runPython("import sys\nsys.path.insert(0,'/lab')");
+          py.setStdout({batched:function(t){ outLine(t); }});
+          py.setStderr({batched:function(t){ outLine(t,'e'); }});
+          res(py);
+        },rej);
+      }
+      if(window.loadPyodide) return boot();
+      var sc=document.createElement('script'); sc.src=PY_BASE+'pyodide.js';
+      sc.onload=boot; sc.onerror=function(){ rej(new Error('No se pudo descargar Python')); };
+      document.head.appendChild(sc);
+    });
+    pyReady.catch(function(){ pyReady=null; });
+    return pyReady;
+  }
+  function cleanTrace(msg,code){
+    var lines=String(msg).trim().split('\n'), last=lines[lines.length-1], ln=null;
+    lines.forEach(function(l){ var m=l.match(/File "<exec>", line (\d+)/); if(m) ln=+m[1]; });
+    if(ln===null) return last;
+    return 'Línea '+ln+': '+(code.split('\n')[ln-1]||'').trim()+'\n'+last;
+  }
+  var CANVAS=SINGLE.concat(['cx','cz','swap','ccx','ccz']);
+  function syncFromPython(ex){
+    if(!ex||!ex.ok) return 'Tu código no creó ningún QuantumCircuit.';
+    if(ex.n<2||ex.n>3) return 'Tu circuito tiene '+ex.n+' qubit'+(ex.n>1?'s':'')+'. El dibujo es de 2 o 3, así que el resultado está solo en la salida.';
+    if(!ex.ops.every(function(o){ return CANVAS.indexOf(o[0])>=0; })) return 'Tu circuito usa puertas que el dibujo no tiene (como rx, ry o cp). El resultado está en la salida.';
+    applyParsed({n:ex.n,ops:ex.ops.map(function(o){ return {g:o[0],qs:o[1]}; })});
+    typing=true; changed(false); typing=false;
+    var msg='Circuito dibujado arriba.';
+    if(ex.counts){
+      var keys=Object.keys(ex.counts);
+      if(keys.length&&keys.every(function(k){ return k.length===ex.n; })){
+        var arr=[]; for(var i=0;i<(1<<ex.n);i++) arr.push(ex.counts[lbl(i,ex.n)]||0);
+        measured={counts:arr,shots:ex.shots,noise:false,py:true}; view='bars'; render();
+        msg='Circuito dibujado arriba y conteos en las barras.';
+      }
+    }
+    return msg;
+  }
+  runBtn.addEventListener('click',function(){
+    var code=pasteEl.value; clearTimeout(timer);
+    pyOut.hidden=false; pyOut.innerHTML=''; runBtn.disabled=true;
+    outLine(pyReady?'Ejecutando…':'Cargando Python (solo la primera vez)…','i');
+    loadMsg.className='msg'; loadMsg.textContent='';
+    loadPy().then(function(py){
+      pyOut.innerHTML='';
+      var g=py.globals.get('dict')();
+      try{
+        py.runPython('import qiskit\nqiskit._reset()');
+        py.runPython(code,{globals:g});
+        if(!pyOut.textContent) outLine('(El código corrió sin imprimir nada. Usa print(...) para ver resultados.)','i');
+        var ex=JSON.parse(py.runPython('import json, qiskit\njson.dumps(qiskit._export())'));
+        loadMsg.className='msg ok'; loadMsg.textContent=syncFromPython(ex);
+      }catch(e){
+        outLine(cleanTrace(e.message,code),'e');
+        loadMsg.className='msg err'; loadMsg.textContent='Python encontró un error. Mira la salida.';
+      }finally{ g.destroy(); runBtn.disabled=false; }
+    },function(){
+      pyOut.innerHTML=''; runBtn.disabled=false;
+      outLine('No se pudo cargar Python. Revisa tu conexión a internet. En la vista previa privada de Claude no funciona; en la página publicada sí.','e');
+    });
+  });
+
+  /* ---------- controles ---------- */
+  function doMeasure(force){
+    if(force&&!noiseOn){ noiseOn=true; nb.setAttribute('aria-pressed','true'); nb.textContent='Ruido de chip: encendido'; }
+    var p=probsOf(state(cols)); if(noiseOn) p=noisy(p);
+    measured={counts:sample(p,shots),shots:shots,noise:noiseOn}; view='bars'; render();
+  }
+  var nb=document.getElementById('noise');
+  document.getElementById('run').addEventListener('click',function(){ stopPlay(); step=-1; hlA=hlB=-1; tourIdx=tourSteps.length-1; doMeasure(false); drawGrid(); updateStepUI(); paintTour(); });
+  nb.addEventListener('click',function(){
+    noiseOn=!noiseOn; nb.setAttribute('aria-pressed',noiseOn?'true':'false');
+    nb.textContent='Ruido de chip: '+(noiseOn?'encendido':'apagado'); measured=null; render();
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#shots button'),function(b){
+    b.addEventListener('click',function(){
+      shots=+b.dataset.n; measured=null;
+      Array.prototype.forEach.call(document.querySelectorAll('#shots button'),function(x){ x.setAttribute('aria-pressed',x===b?'true':'false'); });
+      render();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#vtabs button'),function(b){
+    b.addEventListener('click',function(){ view=b.dataset.v; shown=null; render(); });
+  });
+  document.getElementById('step').addEventListener('input',function(e){ stopPlay(); step=+e.target.value; hlA=hlB=-1; tourIdx=-1; measured=null; drawGrid(); render(); updateStepUI(); paintTour(); });
+  document.getElementById('clear').addEventListener('click',function(){ stopPlay(); cols=[]; measured=null; pending=null; changed(false); });
+
+  /* ---------- cambios y persistencia ---------- */
+  function changed(fromGrover){
+    isGrover=!!fromGrover; if(!isGrover) groups=null; step=-1; hlA=hlB=-1; normalize();
+    buildTour(); if(!fromGrover) tourIdx=tourSteps.length-2;
+    paintTools(); paintProblem(); updateStepUI(); drawGrid(); render(); gen(); updateHint(); paintTour();
+    try{ localStorage.setItem('grover-lab-v4',JSON.stringify({nq:nq,cols:cols,target:target,iters:iters,isGrover:isGrover,groups:groups})); }catch(e){}
+  }
+  var restored=false;
+  try{
+    var sv=JSON.parse(localStorage.getItem('grover-lab-v4')||'null');
+    if(sv&&(sv.nq===2||sv.nq===3)&&Array.isArray(sv.cols)&&sv.cols.every(function(c){ return c&&Array.isArray(c.s)&&c.s.length===sv.nq; })){
+      nq=sv.nq; cols=sv.cols; target=sv.target||'11'; iters=sv.iters||1; buildProblem();
+      if(sv.isGrover&&sv.groups){ groups=sv.groups; changed(true); setTour(0); } else changed(false);
+      restored=true;
+    }
+  }catch(e){}
+  if(!restored){ buildProblem(); loadGrover(); }
+
+  /* ---------- pestañas ---------- */
+  var secs=['probar','recursos'];
+  function show(id){
+    if(secs.indexOf(id)<0) id='probar';
+    secs.forEach(function(s){ document.getElementById(s).hidden=(s!==id); });
+    Array.prototype.forEach.call(document.querySelectorAll('nav.tabs button'),function(b){
+      if(b.dataset.tab===id) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+    });
+    window.scrollTo(0,0);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('nav.tabs button'),function(b){
+    b.addEventListener('click',function(){ show(b.dataset.tab); try{ history.replaceState(null,'','#'+b.dataset.tab); }catch(e){} });
+  });
+  show((location.hash||'').replace('#',''));
+  window.__groverLab={probs:function(){ return probsOf(state(cols)); }, nq:function(){ return nq; }};
+})();
+</script>
+
+</body>
+</html>
