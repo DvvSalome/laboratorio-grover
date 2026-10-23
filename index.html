@@ -39,6 +39,8 @@ body{
   -webkit-text-size-adjust:100%;
 }
 .wrap{max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:14px}
+.lang{margin-left:auto}
+.lang button{min-width:44px; min-height:40px}
 .appbar{display:flex; align-items:center; gap:12px; padding:4px 2px}
 .logo{width:36px; height:36px; border-radius:50%; background:var(--accent); flex:none; position:relative}
 .logo::before{content:""; position:absolute; inset:9px; border-radius:50%; border:2px solid var(--accent-ink)}
@@ -73,7 +75,7 @@ nav.tabs{
   display:flex; justify-content:center;
   padding:8px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
 }
-nav.tabs .in{display:grid; grid-template-columns:repeat(2,1fr); gap:6px; width:100%; max-width:640px; background:var(--panel2); border-radius:12px; padding:4px}
+nav.tabs .in{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; width:100%; max-width:640px; background:var(--panel2); border-radius:12px; padding:4px}
 nav.tabs button{font:600 15px var(--sans); min-height:44px; border:0; border-radius:9px; background:transparent; color:var(--muted); cursor:pointer}
 nav.tabs button[aria-current="page"]{background:var(--panel); color:var(--fg); box-shadow:0 1px 3px rgba(0,0,0,.18)}
 button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
@@ -216,6 +218,7 @@ table.tl th{font:500 12px var(--mono); color:var(--muted); letter-spacing:.06em;
   <header class="appbar">
     <div class="logo" aria-hidden="true"></div>
     <div><h1>Laboratorio Grover</h1><p class="sub">AI After Hours · Visible Builders</p></div>
+    <div class="mini lang" id="lang" role="group" aria-label="Idioma"><button type="button" data-l="es" aria-pressed="true">ES</button><button type="button" data-l="en" aria-pressed="false">EN</button></div>
   </header>
 
   <!-- PROBAR -->
@@ -317,6 +320,87 @@ table.tl th{font:500 12px var(--mono); color:var(--muted); letter-spacing:.06em;
         <p class="msg" id="loadmsg" role="status"></p>
         <pre class="out" id="pyout" aria-label="Salida de Python" hidden></pre>
         <p class="hint">Mini-Qiskit: QuantumCircuit con h, x, y, z, s, sdg, t, tdg, sx, rx, ry, rz, p, cx, cz, cp, swap, ccx, ccz, measure y measure_all, hasta 12 qubits; AerSimulator, transpile, Statevector y plot_histogram en texto. El dibujo muestra circuitos de 2 o 3 qubits. La primera ejecución descarga Python (unos 10 MB).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHARLA -->
+  <section id="charla" aria-label="Charla" hidden>
+    <div class="wrap">
+      <div class="card">
+        <h2>La charla en una página</h2>
+        <p class="small">Build real-time quantum apps with AI</p>
+        <p class="small">El resumen de la charla, en el mismo orden de las diapositivas.</p>
+      </div>
+
+      <div class="card">
+        <h2>1. ¿Qué es la computación cuántica?</h2>
+        <p class="small">Computa con las reglas de la física cuántica —superposición y probabilidad— en vez de las del interruptor clásico.</p>
+        <ul class="plain">
+          <li>Bit clásico: 0 o 1, como un interruptor. Siempre está en uno de los dos.</li>
+          <li>Qubit: la unidad básica de información de la computación cuántica. Guarda una mezcla de 0 y 1, con una probabilidad para cada uno. Al medirlo, sale solo uno.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>2. Tres ideas para seguir la charla</h2>
+        <ol class="steps">
+          <li>Superposición: principio de la mecánica cuántica para representar varios estados posibles a la vez. Con 2 qubits caben las 4 combinaciones: 00, 01, 10 y 11.</li>
+          <li>Interferencia: las posibilidades se suman o se cancelan, como las olas. Los algoritmos cuánticos la usan para reforzar la respuesta correcta.</li>
+          <li>Medición: al medir sale un solo resultado, por eso el circuito se ejecuta muchas veces y se cuentan los resultados.</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h2>3. El algoritmo de Grover</h2>
+        <p class="small">Es un algoritmo cuántico de búsqueda: encuentra el elemento marcado entre muchas opciones usando muchas menos consultas que cualquier algoritmo clásico.</p>
+        <p class="small">Ejemplo: 4 cajas y un tesoro escondido en una. Un computador clásico revisa en promedio la mitad; Grover lo resuelve con una sola consulta al oráculo.</p>
+      </div>
+
+      <div class="card">
+        <h2>4. Cómo funciona, paso a paso</h2>
+        <ol class="steps">
+          <li>Superposición: una H en cada qubit abre las 4 cajas, al 25 % cada una.</li>
+          <li>Oráculo: una CZ le cambia el signo a la caja marcada (11). Las barras no se mueven, solo cambia la fase.</li>
+          <li>Difusión: H, X, CZ, X, H. Refleja las amplitudes alrededor del promedio: la marcada crece y las demás se apagan.</li>
+          <li>Medición: se mide muchas veces y casi siempre sale 11.</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h2>5. La matemática, resumida</h2>
+        <ul class="plain">
+          <li>Oráculo: U|x⟩ = (−1)^f(x) |x⟩. Invierte el signo solo de la respuesta correcta.</li>
+          <li>Difusión: D = 2|s⟩⟨s| − I. Es una reflexión respecto al promedio de las amplitudes.</li>
+          <li>Con 2 qubits: (½, ½, ½, ½) → (½, ½, ½, −½) → (0, 0, 0, 1). Es decir, 100 % en 11.</li>
+          <li>Con N cajas hacen falta unas (π/4)·√N vueltas.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>6. En un chip real de IBM</h2>
+        <p class="small">Lo corrimos en el IBM Quantum Composer, que tiene plan gratuito. Se pega este código OpenQASM y el Composer dibuja el circuito.</p>
+        <pre class="out" aria-label="Código OpenQASM">OPENQASM 3;
+include "stdgates.inc";
+qubit[2] q; bit[2] c;
+h q[0]; h q[1];
+cz q[0], q[1];
+h q[0]; h q[1];
+x q[0]; x q[1];
+cz q[0], q[1];
+x q[0]; x q[1];
+h q[0]; h q[1];
+c[0] = measure q[0]; c[1] = measure q[1];</pre>
+        <ul class="plain">
+          <li>Inspect muestra cada paso en el simulador ideal: al final, la caja 11 llega a 100 %.</li>
+          <li>En un procesador IBM Heron, con 1024 repeticiones: 921 veces la caja 11 (89,9 %).</li>
+          <li>La diferencia con el 100 % es ruido del hardware, no un error del algoritmo.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>7. Llévatelo a casa</h2>
+        <p class="small">Prueba esta demo en la pestaña Probar, repasa las diapositivas y sigue con los enlaces de la pestaña Recursos.</p>
       </div>
     </div>
   </section>
@@ -427,6 +511,7 @@ table.tl th{font:500 12px var(--mono); color:var(--muted); letter-spacing:.06em;
 
 <nav class="tabs" aria-label="Secciones"><div class="in">
   <button type="button" data-tab="probar">Probar</button>
+  <button type="button" data-tab="charla">Charla</button>
   <button type="button" data-tab="recursos">Recursos</button>
 </div></nav>
 
@@ -1518,7 +1603,7 @@ def _reset():
   if(!restored){ buildProblem(); loadGrover(); }
 
   /* ---------- pestañas ---------- */
-  var secs=['probar','recursos'];
+  var secs=['probar','charla','recursos'];
   function show(id){
     if(secs.indexOf(id)<0) id='probar';
     secs.forEach(function(s){ document.getElementById(s).hidden=(s!==id); });
@@ -1533,6 +1618,267 @@ def _reset():
   show((location.hash||'').replace('#',''));
   window.__groverLab={probs:function(){ return probsOf(state(cols)); }, nq:function(){ return nq; }};
 })();
+</script>
+<script>
+(function(){
+  var EN={
+    /* app + pestañas */
+    'Laboratorio Grover':'Grover Lab','Probar':'Try it','Charla':'Talk','Recursos':'Resources',
+    'Secciones':'Sections','Idioma':'Language','Probar el algoritmo':'Try the algorithm',
+    'Probabilidades en vivo':'Live probabilities','Pasos del algoritmo':'Algorithm steps',
+    'Número de qubits':'Number of qubits','Caja del tesoro':'Treasure box','Iteraciones':'Iterations',
+    'Visualización':'View','Número de intentos':'Number of attempts','Puertas':'Gates',
+    'Formato del código':'Code format','Código del circuito':'Circuit code','Salida de Python':'Python output',
+    /* probar */
+    'Ideal · en vivo':'Ideal · live','Atrás':'Back','Siguiente':'Next','Reproducir':'Play','Pausar':'Pause',
+    'Empezar de nuevo':'Start over','Qué mirar':'What to look at',
+    'Cambiar caja, qubits o iteraciones':'Change box, qubits or iterations',
+    '¿Dónde está el tesoro?':'Where is the treasure?','Iteraciones de Grover':'Grover iterations',
+    'Resultado':'Result','Probabilidades':'Probabilities','Fase':'Phase','Intentos (shots)':'Attempts (shots)',
+    'Medir':'Measure','Ruido de chip: encendido':'Chip noise: on','Ruido de chip: apagado':'Chip noise: off',
+    'Circuito':'Circuit','Inspect · paso a paso':'Inspect · step by step','Limpiar circuito':'Clear circuit',
+    'Código':'Code','Ejecutar Python':'Run Python','Copiar código':'Copy code',
+    'Escribe y el circuito cambia; toca el circuito y el código cambia. Ejecutar Python corre el código completo en tu celular, con un mini-Qiskit.':'Type and the circuit changes; tap the circuit and the code changes. Run Python executes the full code on your phone, with a mini-Qiskit.',
+    'Mini-Qiskit: QuantumCircuit con h, x, y, z, s, sdg, t, tdg, sx, rx, ry, rz, p, cx, cz, cp, swap, ccx, ccz, measure y measure_all, hasta 12 qubits; AerSimulator, transpile, Statevector y plot_histogram en texto. El dibujo muestra circuitos de 2 o 3 qubits. La primera ejecución descarga Python (unos 10 MB).':'Mini-Qiskit: QuantumCircuit with h, x, y, z, s, sdg, t, tdg, sx, rx, ry, rz, p, cx, cz, cp, swap, ccx, ccz, measure and measure_all, up to 12 qubits; AerSimulator, transpile, Statevector and text plot_histogram. The drawing shows circuits of 2 or 3 qubits. The first run downloads Python (about 10 MB).',
+    /* tour */
+    'Paso 0':'Step 0','Todas las cajas cerradas':'All boxes closed','Inicio':'Start','Superposición':'Superposition',
+    'Oráculo':'Oracle','Difusión':'Diffusion','Último paso':'Final step',
+    'Abrimos todas las cajas a la vez':'We open all the boxes at once','El oráculo marca el tesoro':'The oracle marks the treasure',
+    'La difusión amplifica la caja marcada':'Diffusion amplifies the marked box','La difusión se pasa de largo':'Diffusion overshoots',
+    'Debajo de cada barra está lo medido y lo ideal.':'Under each bar: what was measured and the ideal value.',
+    'Cada medición abre una sola caja. Con ruido de chip el resultado se parece al de un procesador real: con 2 qubits, el mío dio 89,9 % en 11.':'Each measurement opens a single box. With chip noise the result looks like a real processor: with 2 qubits, mine gave 89.9% on 11.',
+    'Exploración libre':'Free exploration','Mueve el Inspect o toca el circuito':'Move Inspect or tap the circuit',
+    'Pulsa Siguiente para volver al recorrido paso a paso.':'Press Next to go back to the step-by-step tour.',
+    'Refleja todas las amplitudes alrededor del promedio: la marcada crece y las demás se encogen.':'It reflects all amplitudes around the average: the marked one grows and the others shrink.',
+    'H pone el qubit en superposición.':'H puts the qubit in superposition.','X invierte 0 y 1.':'X flips 0 and 1.',
+    'Y invierte 0 y 1 y además cambia la fase.':'Y flips 0 and 1 and also changes the phase.',
+    'Z cambia la fase de |1⟩ sin tocar las probabilidades.':'Z changes the phase of |1⟩ without touching the probabilities.',
+    'S gira la fase de |1⟩ un cuarto de vuelta (π/2).':'S rotates the phase of |1⟩ a quarter turn (π/2).',
+    'S† gira la fase de |1⟩ π/2 hacia el otro lado.':'S† rotates the phase of |1⟩ π/2 the other way.',
+    'T gira la fase de |1⟩ un octavo de vuelta (π/4).':'T rotates the phase of |1⟩ an eighth of a turn (π/4).',
+    'T† gira la fase de |1⟩ π/4 hacia el otro lado.':'T† rotates the phase of |1⟩ π/4 the other way.',
+    'CX invierte el objetivo solo si el control vale 1. Así se enlazan los qubits.':'CX flips the target only if the control is 1. This is how qubits get linked.',
+    'CZ cambia el signo cuando los dos qubits valen 1.':'CZ flips the sign when both qubits are 1.',
+    'SWAP intercambia los dos qubits.':'SWAP exchanges the two qubits.',
+    'Toffoli invierte el objetivo si los dos controles valen 1.':'Toffoli flips the target if both controls are 1.',
+    'CCZ cambia el signo cuando los tres qubits valen 1.':'CCZ flips the sign when all three qubits are 1.',
+    'La fase cambia en el Vector y en el Q-sphere; las barras quizá no.':'The phase changes in Vector and Q-sphere; the bars may not.',
+    'Mira cómo cambian las barras y el Q-sphere.':'Watch how the bars and the Q-sphere change.',
+    /* paleta, ayudas */
+    'fase π':'phase π','fase π/2':'phase π/2','fase π/4':'phase π/4','control':'control','oráculo':'oracle','oráculo 3':'oracle 3',
+    'intercambio':'swap','borrar':'erase','vacío':'empty',
+    'Ahora toca el qubit objetivo (⊕) en la misma columna.':'Now tap the target qubit (⊕) in the same column.',
+    'Ahora toca el segundo control en la misma columna.':'Now tap the second control in the same column.',
+    'Ahora toca el qubit objetivo (⊕).':'Now tap the target qubit (⊕).',
+    'Toca primero el control y después el objetivo, en la misma columna.':'Tap the control first and then the target, in the same column.',
+    'Toca cada qubit de la puerta, en la misma columna.':'Tap each qubit of the gate, in the same column.',
+    'Toca una puerta para quitarla.':'Tap a gate to remove it.',
+    'Cambiaste el circuito a mano. Toca una caja para volver a cargar Grover.':'You changed the circuit by hand. Tap a box to load Grover again.',
+    'Agrega puertas para poder inspeccionar.':'Add gates to inspect.',
+    'Circuito vacío.':'Empty circuit.','Copiado.':'Copied.',
+    'Texto seleccionado. Cópialo con tu teclado.':'Text selected. Copy it with your keyboard.',
+    'Tu código no creó ningún QuantumCircuit.':'Your code did not create any QuantumCircuit.',
+    'Tu circuito usa puertas que el dibujo no tiene (como rx, ry o cp). El resultado está en la salida.':'Your circuit uses gates the drawing does not have (like rx, ry or cp). The result is in the output.',
+    'Circuito dibujado arriba.':'Circuit drawn above.','Circuito dibujado arriba y conteos en las barras.':'Circuit drawn above and counts in the bars.',
+    'Ejecutando…':'Running…','Cargando Python (solo la primera vez)…':'Loading Python (first time only)…',
+    '(El código corrió sin imprimir nada. Usa print(...) para ver resultados.)':'(The code ran without printing anything. Use print(...) to see results.)',
+    'Python encontró un error. Mira la salida.':'Python found an error. Check the output.',
+    'No se pudo cargar Python. Revisa tu conexión a internet. En la vista previa privada de Claude no funciona; en la página publicada sí.':'Could not load Python. Check your internet connection. It does not work in Claude\'s private preview; it does on the published page.',
+    'El dibujo es de 2 o 3 qubits. Pulsa Ejecutar Python para correr circuitos más grandes.':'The drawing is for 2 or 3 qubits. Press Run Python to run larger circuits.',
+    'El dibujo en vivo no lee esta línea. Pulsa Ejecutar Python para correr el código completo.':'The live drawing does not read this line. Press Run Python to run the full code.',
+    /* vistas */
+    'tamaño = probabilidad':'size = probability','arrastra para girar':'drag to rotate','fase:':'phase:',
+    'azul = prob. de |1⟩':'blue = prob. of |1⟩','línea = fase local (0 a la derecha)':'line = local phase (0 on the right)',
+    'anillo = pureza':'ring = purity','largo = magnitud de la amplitud':'length = amplitude magnitude',
+    'Esferas de Bloch':'Bloch spheres','Discos de fase':'Phase disks',
+    'Menor que 1: ese qubit está enlazado con los otros y, por separado, queda en estado mezclado.':'Less than 1: that qubit is entangled with the others and, on its own, ends up in a mixed state.',
+    'Todos en 1: cada qubit tiene su propio estado, sin enlace.':'All at 1: each qubit has its own state, no entanglement.',
+    'Medición con ruido de chip (modelo simple): no sale 100 % y cambia cada vez.':'Measurement with chip noise (simple model): it does not reach 100% and changes every time.',
+    'Medición sin ruido: sale lo que predice la teoría, con algo de azar.':'Measurement without noise: you get what the theory predicts, with some randomness.',
+    'Probabilidades después del paso que estás viendo.':'Probabilities after the step you are viewing.',
+    'Probabilidades en vivo con un simulador ideal, igual que en el Composer.':'Live probabilities with an ideal simulator, just like in the Composer.',
+    'Una esfera por qubit. El vector apunta al estado del qubit; si se enlaza con otros, se acorta.':'One sphere per qubit. The vector points to the qubit state; if it gets entangled with others, it shortens.',
+    'Un disco por qubit, con la misma información que el Phase disk del Composer.':'One disk per qubit, with the same information as the Composer\'s Phase disk.',
+    'Amplitudes del estado: el largo es la magnitud y el color es la fase.':'State amplitudes: length is magnitude and color is phase.',
+    'Tu circuito no tiene puertas de varios qubits, así que el ruido casi no cambia nada.':'Your circuit has no multi-qubit gates, so noise barely changes anything.',
+    /* recursos */
+    'Mi resultado en un chip real':'My result on a real chip',
+    'Grover con 2 qubits y 4 cajas, en un procesador IBM Heron, 1024 repeticiones.':'Grover with 2 qubits and 4 boxes, on an IBM Heron processor, 1024 repetitions.',
+    'La caja 11 salió el 89,9 % de las veces. El resto es ruido del chip, no un fallo del algoritmo.':'Box 11 came up 89.9% of the time. The rest is chip noise, not an algorithm failure.',
+    'Grover con 2 qubits, paso a paso':'Grover with 2 qubits, step by step',
+    'Después de':'After','Amplitudes (00, 01, 10, 11)':'Amplitudes (00, 01, 10, 11)','Probabilidad':'Probability',
+    'H en q0 y q1':'H on q0 and q1','½, ½, ½, ½':'½, ½, ½, ½','25 % cada caja':'25% each box',
+    'CZ (oráculo)':'CZ (oracle)','25 % cada caja; cambió la fase de 11':'25% each box; the phase of 11 changed',
+    'H, X, CZ, X, H (difusión)':'H, X, CZ, X, H (diffusion)','100 % en 11':'100% on 11',
+    'El oráculo no mueve las barras, solo la fase: en el Q-sphere el punto de 11 cambia de color. La difusión es la que mueve las probabilidades. El −1 final es una fase global: no cambia lo que mides.':'The oracle does not move the bars, only the phase: in the Q-sphere the dot for 11 changes color. Diffusion is what moves the probabilities. The final −1 is a global phase: it does not change what you measure.',
+    'Más cajas: 3 qubits':'More boxes: 3 qubits',
+    'Con 8 cajas una sola vuelta no basta. Cada iteración repite oráculo y difusión, y si te pasas la probabilidad vuelve a bajar.':'With 8 boxes a single round is not enough. Each iteration repeats oracle and diffusion, and if you overshoot the probability drops again.',
+    'Probabilidad del tesoro':'Treasure probability','2 (óptimo)':'2 (optimal)',
+    'La regla: unas (π/4)·√N iteraciones. Un computador clásico revisa en promedio N/2 cajas; Grover necesita del orden de √N consultas al oráculo.':'The rule: about (π/4)·√N iterations. A classical computer checks N/2 boxes on average; Grover needs on the order of √N oracle queries.',
+    'Qué verás en el Composer':'What you will see in the Composer',
+    'Las visualizaciones en vivo del Composer vienen de un simulador ideal, no del chip que elijas, e ignoran las mediciones. El resultado del chip aparece como histograma en la página del trabajo.':'The Composer\'s live views come from an ideal simulator, not from the chip you pick, and they ignore measurements. The chip result appears as a histogram on the job page.',
+    'Histograma de probabilidades por estado. No muestra la fase.':'Probability histogram per state. It does not show the phase.',
+    'Cada estado es un punto en una esfera: el tamaño es la probabilidad y el color es la fase. 00…0 va en el polo norte y 11…1 en el sur; los estados con igual número de unos comparten latitud.':'Each state is a dot on a sphere: size is probability and color is phase. 00…0 sits at the north pole and 11…1 at the south; states with the same number of ones share a latitude.',
+    'Un disco por qubit: probabilidad de |1⟩, fase local y pureza (1 = sin enlace).':'One disk per qubit: probability of |1⟩, local phase and purity (1 = no entanglement).',
+    'La magnitud de cada amplitud, con la fase en color.':'The magnitude of each amplitude, with the phase in color.',
+    'Este laboratorio y el Composer':'This lab and the Composer',
+    'Igual: vista en vivo con simulador ideal, Q-sphere, statevector, disco de fase, Inspect paso a paso y código sincronizado con el circuito.':'Same: live view with an ideal simulator, Q-sphere, statevector, phase disk, step-by-step Inspect and code synced with the circuit.',
+    'Distinto: aquí no hay chip real. El ruido es un modelo simple para dar una idea. El dibujo llega a 3 qubits y a las puertas H, X, Y, Z, S, T, CX, CZ, SWAP, CCX y CCZ.':'Different: there is no real chip here. Noise is a simple model to give an idea. The drawing goes up to 3 qubits and the gates H, X, Y, Z, S, T, CX, CZ, SWAP, CCX and CCZ.',
+    'Los colores de fase siguen la idea del Composer, pero no copian su paleta exacta. La esfera de Bloch es un extra.':'Phase colors follow the Composer\'s idea but do not copy its exact palette. The Bloch sphere is an extra.',
+    'El Composer escribe OpenQASM; aquí también puedes correr Python con un mini-Qiskit que imita la API básica de Qiskit.':'The Composer writes OpenQASM; here you can also run Python with a mini-Qiskit that mimics the basic Qiskit API.',
+    'Para seguir':'Keep going','Diapositivas de la charla':'Talk slides',
+    'Arrastra puertas y córrelo en un chip real':'Drag gates and run it on a real chip',
+    'Grover en IBM Quantum Learning':'Grover on IBM Quantum Learning','La explicación completa y la matemática':'The full explanation and the math',
+    'Guía del Composer':'Composer guide','Qué significa cada visualización':'What each view means',
+    'Planes de IBM Quantum':'IBM Quantum plans','El plan abierto es gratis: 10 minutos de chip real cada 28 días':'The open plan is free: 10 minutes of real chip every 28 days',
+    'Cómo llegar a un chip real':'How to reach a real chip',
+    'Crea una cuenta gratuita de IBM Quantum.':'Create a free IBM Quantum account.',
+    'Abre el Composer y elige File > New > QASM2.':'Open the Composer and choose File > New > QASM2.',
+    'En Probar, cambia el código a OpenQASM 2, cópialo y pégalo.':'In Try it, switch the code to OpenQASM 2, copy it and paste it.',
+    'Pulsa Run, elige un procesador y espera en la cola.':'Press Run, pick a processor and wait in the queue.',
+    'Los minutos disponibles y el nombre del chip los ves en tu consola de IBM.':'You can see the available minutes and the chip name in your IBM console.',
+    'Busca: Salome Arboleda':'Search: Salome Arboleda','Charla':'Talk','Código OpenQASM':'OpenQASM code',
+    /* charla */
+    'La charla en una página':'The talk on one page',
+    'El resumen de la charla, en el mismo orden de las diapositivas.':'The talk summary, in the same order as the slides.',
+    '1. ¿Qué es la computación cuántica?':'1. What is quantum computing?',
+    'Computa con las reglas de la física cuántica —superposición y probabilidad— en vez de las del interruptor clásico.':'It computes with the rules of quantum physics —superposition and probability— instead of the classical switch.',
+    'Bit clásico: 0 o 1, como un interruptor. Siempre está en uno de los dos.':'Classical bit: 0 or 1, like a switch. It is always in one of the two.',
+    'Qubit: la unidad básica de información de la computación cuántica. Guarda una mezcla de 0 y 1, con una probabilidad para cada uno. Al medirlo, sale solo uno.':'Qubit: the basic unit of information in quantum computing. It holds a mix of 0 and 1, with a probability for each. When measured, only one comes out.',
+    '2. Tres ideas para seguir la charla':'2. Three ideas to follow the talk',
+    'Superposición: principio de la mecánica cuántica para representar varios estados posibles a la vez. Con 2 qubits caben las 4 combinaciones: 00, 01, 10 y 11.':'Superposition: a principle of quantum mechanics to represent several possible states at once. With 2 qubits all 4 combinations fit: 00, 01, 10 and 11.',
+    'Interferencia: las posibilidades se suman o se cancelan, como las olas. Los algoritmos cuánticos la usan para reforzar la respuesta correcta.':'Interference: possibilities add up or cancel, like waves. Quantum algorithms use it to reinforce the right answer.',
+    'Medición: al medir sale un solo resultado, por eso el circuito se ejecuta muchas veces y se cuentan los resultados.':'Measurement: measuring gives a single result, so the circuit is run many times and the results are counted.',
+    '3. El algoritmo de Grover':'3. Grover\'s algorithm',
+    'Es un algoritmo cuántico de búsqueda: encuentra el elemento marcado entre muchas opciones usando muchas menos consultas que cualquier algoritmo clásico.':'It is a quantum search algorithm: it finds the marked item among many options using far fewer queries than any classical algorithm.',
+    'Ejemplo: 4 cajas y un tesoro escondido en una. Un computador clásico revisa en promedio la mitad; Grover lo resuelve con una sola consulta al oráculo.':'Example: 4 boxes and a treasure hidden in one. A classical computer checks half of them on average; Grover solves it with a single oracle query.',
+    '4. Cómo funciona, paso a paso':'4. How it works, step by step',
+    'Superposición: una H en cada qubit abre las 4 cajas, al 25 % cada una.':'Superposition: an H on each qubit opens the 4 boxes, at 25% each.',
+    'Oráculo: una CZ le cambia el signo a la caja marcada (11). Las barras no se mueven, solo cambia la fase.':'Oracle: a CZ flips the sign of the marked box (11). The bars do not move, only the phase changes.',
+    'Difusión: H, X, CZ, X, H. Refleja las amplitudes alrededor del promedio: la marcada crece y las demás se apagan.':'Diffusion: H, X, CZ, X, H. It reflects the amplitudes around the average: the marked one grows and the others fade out.',
+    'Medición: se mide muchas veces y casi siempre sale 11.':'Measurement: it is measured many times and almost always gives 11.',
+    '5. La matemática, resumida':'5. The math, summarized',
+    'Oráculo: U|x⟩ = (−1)^f(x) |x⟩. Invierte el signo solo de la respuesta correcta.':'Oracle: U|x⟩ = (−1)^f(x) |x⟩. It flips the sign of the correct answer only.',
+    'Difusión: D = 2|s⟩⟨s| − I. Es una reflexión respecto al promedio de las amplitudes.':'Diffusion: D = 2|s⟩⟨s| − I. It is a reflection around the average of the amplitudes.',
+    'Con 2 qubits: (½, ½, ½, ½) → (½, ½, ½, −½) → (0, 0, 0, 1). Es decir, 100 % en 11.':'With 2 qubits: (½, ½, ½, ½) → (½, ½, ½, −½) → (0, 0, 0, 1). That is, 100% on 11.',
+    'Con N cajas hacen falta unas (π/4)·√N vueltas.':'With N boxes you need about (π/4)·√N rounds.',
+    '6. En un chip real de IBM':'6. On a real IBM chip',
+    'Lo corrimos en el IBM Quantum Composer, que tiene plan gratuito. Se pega este código OpenQASM y el Composer dibuja el circuito.':'We ran it in the IBM Quantum Composer, which has a free plan. Paste this OpenQASM code and the Composer draws the circuit.',
+    'Inspect muestra cada paso en el simulador ideal: al final, la caja 11 llega a 100 %.':'Inspect shows each step in the ideal simulator: at the end, box 11 reaches 100%.',
+    'En un procesador IBM Heron, con 1024 repeticiones: 921 veces la caja 11 (89,9 %).':'On an IBM Heron processor, with 1024 repetitions: box 11 came up 921 times (89.9%).',
+    'La diferencia con el 100 % es ruido del hardware, no un error del algoritmo.':'The gap from 100% is hardware noise, not an algorithm error.',
+    '7. Llévatelo a casa':'7. Take it home',
+    'Prueba esta demo en la pestaña Probar, repasa las diapositivas y sigue con los enlaces de la pestaña Recursos.':'Try this demo in the Try it tab, review the slides and keep going with the links in the Resources tab.'
+  };
+
+  function pl(n,one,many){ return +n===1?one:many; }
+  var RULES=[
+    [/^Paso (\d+)$/,'Step $1'],
+    [/^Paso (\d+) · vuelta (\d+) de (\d+)$/,'Step $1 · round $2 of $3'],
+    [/^Oráculo (\d+)$/,'Oracle $1'],[/^Difusión (\d+)$/,'Diffusion $1'],
+    [/^Los (\d+) qubits empiezan en 0, así que el estado es (\d+)\. Todavía no buscamos nada\.$/,'The $1 qubits start at 0, so the state is $2. We are not searching for anything yet.'],
+    [/^100 % en (\d+)\.$/,'100% on $1.'],
+    [/^Una H en cada qubit los pone en superposición\. Las (\d+) cajas quedan con la misma probabilidad\.$/,'An H on each qubit puts them in superposition. All $1 boxes end up with the same probability.'],
+    [/^Todas las barras iguales: (.*) cada una\.$/,'All bars equal: $1 each.'],
+    [/^No dice dónde está el tesoro: solo le cambia el signo a la amplitud de (\d+)\. Por eso las probabilidades no se mueven\.$/,'It does not say where the treasure is: it only flips the sign of the amplitude of $1. That is why the probabilities do not move.'],
+    [/^En el Vector, la barra de (\d+) cambia de color: ahora tiene fase π\.$/,'In the Vector view, the bar for $1 changes color: it now has phase π.'],
+    [/^Refleja todas las amplitudes alrededor del promedio: la marcada crece y las demás se encogen\. Ya pasamos el óptimo \((\d+)\), así que esta vuelta la hace bajar\.$/,'It reflects all amplitudes around the average: the marked one grows and the others shrink. We are past the optimum ($1), so this round makes it drop.'],
+    [/^(\d+) queda con (.*)\.$/,'$1 ends up with $2.'],
+    [/^Medimos (\d+) veces$/,'We measure $1 times'],
+    [/^Tesoro en la caja (\d+)$/,'Treasure in box $1'],
+    [/^(\d+) iteraci(ón|ones)(, óptimo)?$/,function(m,n,w,o){ return n+' '+pl(n,'iteration','iterations')+(o?', optimal':''); }],
+    [/^Con (\d+) cajas y (\d+) iteraci(?:ón|ones), la teoría da$/,function(m,n,k){ return 'With '+n+' boxes and '+k+' '+pl(k,'iteration','iterations')+', the theory gives'; }],
+    [/^en la caja$/,'in box'],
+    [/^\. Es el número óptimo de iteraciones\.$/,'. That is the optimal number of iterations.'],
+    [/^\. Te pasaste: lo óptimo es (\d+), y la probabilidad vuelve a bajar\.$/,'. You overshot: the optimum is $1, and the probability drops again.'],
+    [/^\. Lo óptimo es (\d+)\.$/,'. The optimum is $1.'],
+    [/^Toca un espacio del cable para poner (.+)\. Tócala otra vez para quitarla\.$/,'Tap a spot on the wire to place $1. Tap it again to remove it.'],
+    [/^Ahora toca (?:el otro qubit|otro qubit) en la misma columna\.$/,'Now tap the other qubit in the same column.'],
+    [/^q(\d+), columna (\d+)(.*)$/,function(m,q,c,rest){ return 'q'+q+', column '+c+rest.replace(', vacío',', empty'); }],
+    [/^Circuito completo, (\d+) pasos?\. Mueve el control hacia atrás para ver cada paso\.$/,function(m,n){ return 'Circuit complete, '+n+' '+pl(n,'step','steps')+'. Move the slider back to see each step.'; }],
+    [/^Inicio: todo en la caja (\d+)\.$/,'Start: everything in box $1.'],
+    [/^Paso (\d+) de (\d+): (.*)\.$/,function(m,k,n,d){ return 'Step '+k+' of '+n+': '+desc(d)+'.'; }],
+    [/^(CX|CCX), control(?:es)? (.*)$/,function(m){ return desc(m); }],
+    [/^[A-Z]+†? en q\d+(?:, q\d+)*(?:; .*)?$/,function(m){ return desc(m); }],
+    [/^(Python|Medido) · (\d+) shots$/,function(m,k,n){ return (k==='Medido'?'Measured':'Python')+' · '+n+' shots'; }],
+    [/^máx\.$/,'max.'],
+    [/^Resultado de tu código Python, en el simulador ideal \((\d+) intentos\)\.$/,'Result of your Python code, in the ideal simulator ($1 attempts).'],
+    [/^Como el Q-sphere del Composer: (\d+) arriba, (\d+) abajo y los estados con igual número de unos en la misma latitud\. Arrastra para girar\.$/,'Like the Composer\'s Q-sphere: $1 on top, $2 at the bottom and states with the same number of ones at the same latitude. Drag to rotate.'],
+    [/^Tu circuito tiene (\d+) puertas? de varios qubits\. Son las más ruidosas en un chip real\.$/,function(m,n){ return 'Your circuit has '+n+' multi-qubit '+pl(n,'gate','gates')+'. They are the noisiest on a real chip.'; }],
+    [/^Q-sphere de (\d+) qubits$/,'Q-sphere of $1 qubits'],
+    [/^Largo del vector: (.*)\. (Menor que 1: .*|Todos en 1: .*)$/,function(m,a,b){ return 'Vector length: '+a+'. '+(EN[b]||b); }],
+    [/^pureza (.*)$/,'purity $1'],
+    [/^Circuito actualizado: (\d+) puertas?\.$/,function(m,n){ return 'Circuit updated: '+n+' '+pl(n,'gate','gates')+'.'; }],
+    [/^No entiendo: (".*")\. Uso (.*)\.$/,'I do not understand: $1. I support $2.'],
+    [/^Tu circuito tiene (\d+) qubits?\. El dibujo es de 2 o 3, así que el resultado está solo en la salida\.$/,function(m,n){ return 'Your circuit has '+n+' '+pl(n,'qubit','qubits')+'. The drawing is for 2 or 3, so the result is only in the output.'; }],
+    [/^(\d+) de (\d+) · ideal (.*)$/,'$1 of $2 · ideal $3'],
+    [/^(.+), oráculo( 3)?$/,function(m,g,t){ return g+', oracle'+(t?' 3':''); }],
+    [/^Línea (\d+): /,'Line $1: ']
+  ];
+  function desc(d){
+    return d.replace(/ en /g,' on ').replace(/, controles (q\d+) y (q\d+), objetivo (q\d+)/,', controls $1 and $2, target $3')
+            .replace(/, control (q\d+) y objetivo (q\d+)/,', control $1 and target $2');
+  }
+
+  var lang='es'; try{ lang=localStorage.getItem('grover-lang')==='en'?'en':'es'; }catch(e){}
+  var txt=new WeakMap(), att=new WeakMap(), has=Object.prototype.hasOwnProperty;
+  function norm(s){ return s.replace(/(\d),(\d)/g,'$1.$2').replace(/(\d) %/g,'$1%'); }
+  function tr(s,plain){
+    var m=/^(\s*)([\s\S]*?)(\s*)$/.exec(s), core=m[2]; if(!core) return s;
+    var key=core.replace(/\s+/g,' '), out=null;
+    if(has.call(EN,key)) out=EN[key];
+    else for(var i=0;i<RULES.length;i++){ if(RULES[i][0].test(core)){ out=core.replace(RULES[i][0],RULES[i][1]); break; } }
+    if(out===null) out=core;
+    if(!plain) out=norm(out);
+    return m[1]+out+m[3];
+  }
+  function pText(n){
+    var p=n.parentNode; if(!p||/^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)) return;
+    var rec=txt.get(n);
+    if(lang==='en'){
+      if(rec&&n.data===rec.en) return;
+      var e=tr(n.data,!!(p.closest&&p.closest('pre,code')));
+      if(e!==n.data){ txt.set(n,{es:n.data,en:e}); n.data=e; }
+    } else if(rec&&n.data===rec.en){ n.data=rec.es; txt.delete(n); }
+  }
+  function pAttr(el){
+    var v=el.getAttribute('aria-label'); if(v===null) return;
+    var rec=att.get(el);
+    if(lang==='en'){
+      if(rec&&v===rec.en) return;
+      var e=tr(v,true); if(e!==v){ att.set(el,{es:v,en:e}); el.setAttribute('aria-label',e); }
+    } else if(rec&&v===rec.en){ el.setAttribute('aria-label',rec.es); att.delete(el); }
+  }
+  function walk(root){
+    if(root.nodeType===3){ pText(root); return; }
+    if(root.nodeType!==1) return;
+    if(root.hasAttribute('aria-label')) pAttr(root);
+    var w=document.createTreeWalker(root,5,null), n;
+    while((n=w.nextNode())){ if(n.nodeType===3) pText(n); else if(n.hasAttribute('aria-label')) pAttr(n); }
+  }
+  var mo=new MutationObserver(function(ms){
+    ms.forEach(function(m){
+      if(m.type==='characterData') pText(m.target);
+      else if(m.type==='attributes') pAttr(m.target);
+      else Array.prototype.forEach.call(m.addedNodes,walk);
+    });
+  });
+  function paintToggle(){
+    document.documentElement.lang=lang;
+    document.title=lang==='en'?'Grover Lab':'Laboratorio Grover';
+    Array.prototype.forEach.call(document.querySelectorAll('#lang button'),function(b){ b.setAttribute('aria-pressed',b.dataset.l===lang?'true':'false'); });
+  }
+  function setLang(l){
+    lang=l; try{ localStorage.setItem('grover-lang',l); }catch(e){}
+    walk(document.body); paintToggle();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#lang button'),function(b){
+    b.addEventListener('click',function(){ setLang(b.dataset.l); });
+  });
+  mo.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['aria-label']});
+  paintToggle(); if(lang==='en') walk(document.body);
+})();
+
 </script>
 
 </body>
