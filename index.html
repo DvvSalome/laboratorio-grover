@@ -40,6 +40,15 @@ body{
 }
 .wrap{max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:14px}
 .lang{margin-left:auto}
+#helpbtn{min-width:44px; padding:0; font:600 16px var(--mono)}
+.welcome{position:fixed; inset:0; z-index:20; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:20px; overflow:auto}
+.welcome[hidden],.wcard[hidden]{display:none}
+.wcard{max-width:480px; width:100%; margin:auto; display:flex; flex-direction:column; gap:18px}
+.wcard h2{font:600 24px/1.2 var(--sans)}
+.wbtns{display:grid; gap:10px}
+.wsec{border:1px solid var(--line); background:var(--panel); border-radius:var(--r2); padding:12px 14px; display:flex; flex-direction:column; gap:2px}
+.wsec strong{font-weight:600; color:var(--accent-text)}
+.wsec span{font-size:14px; color:var(--muted)}
 .lang button{min-width:44px; min-height:40px}
 .appbar{display:flex; align-items:center; gap:12px; padding:4px 2px}
 .logo{width:36px; height:36px; border-radius:50%; background:var(--accent); flex:none; position:relative}
@@ -219,6 +228,7 @@ table.tl th{font:500 12px var(--mono); color:var(--muted); letter-spacing:.06em;
     <div class="logo" aria-hidden="true"></div>
     <div><h1>Laboratorio Grover</h1><p class="sub">AI After Hours · Visible Builders</p></div>
     <div class="mini lang" id="lang" role="group" aria-label="Idioma"><button type="button" data-l="es" aria-pressed="true">ES</button><button type="button" data-l="en" aria-pressed="false">EN</button></div>
+    <button class="chip" id="helpbtn" type="button" aria-label="Ayuda">?</button>
   </header>
 
   <!-- PROBAR -->
@@ -507,6 +517,25 @@ c[0] = measure q[0]; c[1] = measure q[1];</pre>
       </div>
     </div>
   </section>
+</div>
+
+<div id="welcome" class="welcome" role="dialog" aria-modal="true" aria-label="Bienvenida" hidden>
+  <div class="wcard">
+    <div class="logo" aria-hidden="true"></div>
+    <div id="wlang" class="wcard">
+      <h2>Elige tu idioma · Choose your language</h2>
+      <div class="wbtns"><button class="btn" type="button" data-l="es">Español</button><button class="btn" type="button" data-l="en">English</button></div>
+    </div>
+    <div id="wintro" class="wcard" hidden>
+      <h2>Bienvenido al Laboratorio Grover</h2>
+      <p class="small">Una demo de la charla "Build real-time quantum apps with AI". Tiene 3 secciones:</p>
+      <div class="wsec"><strong>Probar</strong><span>Corre el algoritmo de Grover paso a paso, mira las probabilidades en vivo y arma tus propios circuitos.</span></div>
+      <div class="wsec"><strong>Charla</strong><span>El contenido de la charla resumido en una página. Ve aquí si quieres leerlo desde la app o si no hablas español: cambia el idioma arriba a la derecha.</span></div>
+      <div class="wsec"><strong>Recursos</strong><span>El resultado en un chip real de IBM, la matemática, enlaces y las diapositivas.</span></div>
+      <p class="small">Puedes cambiar el idioma en cualquier momento con ES / EN.</p>
+      <button class="btn" id="wstart" type="button">Empezar</button>
+    </div>
+  </div>
 </div>
 
 <nav class="tabs" aria-label="Secciones"><div class="in">
@@ -1737,7 +1766,14 @@ def _reset():
     'En Probar, cambia el código a OpenQASM 2, cópialo y pégalo.':'In Try it, switch the code to OpenQASM 2, copy it and paste it.',
     'Pulsa Run, elige un procesador y espera en la cola.':'Press Run, pick a processor and wait in the queue.',
     'Los minutos disponibles y el nombre del chip los ves en tu consola de IBM.':'You can see the available minutes and the chip name in your IBM console.',
-    'Busca: Salome Arboleda':'Search: Salome Arboleda','Charla':'Talk','Código OpenQASM':'OpenQASM code',
+    'Busca: Salome Arboleda':'Search: Salome Arboleda','Charla':'Talk','Código OpenQASM':'OpenQASM code','Ayuda':'Help','Bienvenida':'Welcome',
+    'Bienvenido al Laboratorio Grover':'Welcome to Grover Lab',
+    'Una demo de la charla "Build real-time quantum apps with AI". Tiene 3 secciones:':'A demo from the talk "Build real-time quantum apps with AI". It has 3 sections:',
+    'Corre el algoritmo de Grover paso a paso, mira las probabilidades en vivo y arma tus propios circuitos.':'Run Grover\'s algorithm step by step, watch the probabilities live and build your own circuits.',
+    'El contenido de la charla resumido en una página. Ve aquí si quieres leerlo desde la app o si no hablas español: cambia el idioma arriba a la derecha.':'The talk content summarized on one page. Come here if you want to read it from the app or if you do not speak Spanish: change the language at the top right.',
+    'El resultado en un chip real de IBM, la matemática, enlaces y las diapositivas.':'The result on a real IBM chip, the math, links and the slides.',
+    'Puedes cambiar el idioma en cualquier momento con ES / EN.':'You can change the language at any time with ES / EN.',
+    'Empezar':'Start',
     /* charla */
     'La charla en una página':'The talk on one page',
     'El resumen de la charla, en el mismo orden de las diapositivas.':'The talk summary, in the same order as the slides.',
@@ -1875,6 +1911,19 @@ def _reset():
   Array.prototype.forEach.call(document.querySelectorAll('#lang button'),function(b){
     b.addEventListener('click',function(){ setLang(b.dataset.l); });
   });
+  var W=document.getElementById('welcome'), wl=document.getElementById('wlang'), wi=document.getElementById('wintro');
+  function wShow(which){
+    W.hidden=false; document.body.style.overflow='hidden'; wl.hidden=(which!=='lang'); wi.hidden=(which!=='intro');
+    var f=(which==='lang'?wl:wi).querySelector('button'); if(which==='intro') f=document.getElementById('wstart'); if(f) try{ f.focus(); }catch(e){}
+    W.scrollTop=0;
+  }
+  function wClose(){ W.hidden=true; document.body.style.overflow=''; try{ localStorage.setItem('grover-welcome','1'); }catch(e){} }
+  Array.prototype.forEach.call(wl.querySelectorAll('button'),function(b){ b.addEventListener('click',function(){ setLang(b.dataset.l); wShow('intro'); }); });
+  document.getElementById('wstart').addEventListener('click',wClose);
+  document.getElementById('helpbtn').addEventListener('click',function(){ wShow('intro'); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!W.hidden&&wl.hidden) wClose(); });
+  var seen=false; try{ seen=localStorage.getItem('grover-welcome')==='1'; }catch(e){}
+  if(!seen) wShow('lang');
   mo.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['aria-label']});
   paintToggle(); if(lang==='en') walk(document.body);
 })();
